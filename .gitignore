@@ -7,3 +7,6 @@ __pycache__/
 # PyQML book (no license): never commit
 book_vol1/
 pyqml_port/ported/
+book_vol2/
+pyqml_port/ported_vol2/
+*.swp

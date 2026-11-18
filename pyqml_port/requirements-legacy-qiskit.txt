@@ -1,0 +1,16 @@
+# Pinned environment for the PyQML cells that use Qiskit's pre-1.0 algorithm stack
+# (qiskit.algorithms VQE/QAOA, QuantumInstance, qiskit_optimization). Versions current when
+# Vol. 2 was published (Jan 2023). Python 3.10 or 3.11.
+qiskit==0.41.0               # terra 0.23.1, aer 0.11.2, ibmq-provider 0.20.0
+qiskit-optimization==0.5.0
+docplex==2.25.236
+mitiq==0.23.0
+numpy==1.23.5
+scipy==1.10.1
+pandas==1.4.4               # book imports pandas.core.common.SettingWithCopyWarning (gone in 1.5)
+networkx==2.8.8
+matplotlib==3.6.3
+pylatexenc==2.10
+setuptools<70               # old qiskit imports pkg_resources
+jupyterlab
+ipykernel

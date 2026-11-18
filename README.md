@@ -5,7 +5,7 @@ idea, made rigorous, plus applied use cases: Kohn-Sham (DFT) eigenvalues, EUV li
 quantum magnets, and horizon thermality from vacuum entanglement.**
 
 Package: `mwqc` (MW Quantum Compute) · Python ≥ 3.9 · numpy, scipy, torch · optional PySCF, Qiskit (only for cross-checks)
-Status: research code, v0.1.0, 2026-11-18. 30 tests pass. Every headline number below is
+Status: research code, v0.1.0, 2026-11-18. 34 tests pass. Every headline number below is
 reproduced by a script in this repo, and every fast or approximate path is checked against an exact one.
 
 ---
@@ -22,6 +22,7 @@ reproduced by a script in this repo, and every fast or approximate path is check
 | Lithography aerial-image/CD surrogate with physics constraint | **Done** | CD error **0.17 nm**, ±2σ coverage 93 %, unseen-pattern detection AUROC 1.000 (§4.2) |
 | Beyond-50-qubit physics: 100-200-spin quench dynamics and ground states | **Done, verified vs exact** | dynamics: every site within 1e-4 of exact (N=100); ground energy error 5.6e-7 (N=100, critical) (§4.3, USE_CASES.md) |
 | Book code (Zickert, PyQML Vol. 1) runs on mwqc by changing one import line | **Done**; 8 book-style programs agree with Qiskit+Aer | exact outputs to ≤2e-14; sampled counts within shot noise (TVD ≤ 0.02) (§5.6) |
+| PyQML Vol. 2 (combinatorial optimization): hand-built circuits and QAOA on mwqc; Qiskit-algorithm chapters on a pinned Qiskit 0.41 env | **Done** (tooling + instructions) | `rzz`/`rxx`/`ryy`, `Parameter`, `assign_parameters` match Qiskit to 1e-12; legacy env checked: QAOA and VQE find the optimal cut (§5.6) |
 | scikit-learn API (`fit/predict`, Pipeline, GridSearchCV) | **Done** | surrogate regressor with `return_std`, quantum-kernel SVM, quantum feature map (§5.5) |
 | Horizon thermality: the quantum vacuum seen from one side of a boundary is thermal (Unruh / Bisognano-Wichmann) | **Done, verified vs CFT** | local temperature profile within 0.4 % of theory; entanglement law c = 0.514 vs ½; MPS vacuum within 2e-3 bits of exact (§4.4) |
 | Where the method stops | **Measured** | cost grows with *entanglement*, not qubit count; random depth-20 circuits on 40 qubits exceed χ = 64 (§3.3) |
@@ -92,7 +93,7 @@ Quantum_Compute_MW/
 │   ├── qft_1000.py            the 1000-qubit QFT, checked (Parts A-C)
 │   └── limits.py              entanglement wall, GHZ(1000), side-by-side with qiskit-aer MPS
 ├── examples/quickstart.py     20-second tour
-├── tests/                     30 tests: MPS = statevector = Qiskit, closed forms, JW = FCI, compat, sklearn
+├── tests/                     34 tests: MPS = statevector = Qiskit, closed forms, JW = FCI, compat, sklearn
 ├── USE_CASES.md               the four use cases in one place
 └── results/                   JSON + logs of every run quoted in this README
 ```
@@ -102,7 +103,7 @@ Quantum_Compute_MW/
 ```bash
 cd ~/Quantum_Compute_MW
 pip install -r requirements.txt            # numpy>=2, scipy, torch, pyscf, pytest
-python3 -m pytest -q                       # 30 tests, ~20 s
+python3 -m pytest -q                       # 34 tests, ~20 s
 python3 examples/quickstart.py             # 20 s
 python3 benchmarks/qft_1000.py             # ~5 min on CPU (Part A ~2 min, Part B ~3 min)
 python3 benchmarks/limits.py               # ~10 min; uses qiskit-aer if installed
@@ -394,7 +395,7 @@ without entanglement. `QuantumFeatureMap` + logistic regression 0.85 = logistic 
 The kernels run on MPS beyond 20 features (statevector == MPS kernel to 1e-10, tested), so 50-200-feature
 quantum kernels fit on a laptop. Whether they *help* is an empirical question per dataset.
 
-### 5.6 PyQML (Zickert, *Hands-On Quantum Machine Learning with Python*, Vol. 1) on mwqc
+### 5.6 PyQML (Zickert, *Hands-On Quantum Machine Learning with Python*, Vols. 1 and 2) on mwqc
 
 The book's code uses the pre-1.0 Qiskit API (`execute`, `Aer.get_backend`, `qc.i`), which today's Qiskit has
 removed, so the original notebooks no longer run on Qiskit 2.x either. `mwqc.qiskit_compat` provides that API.
@@ -412,7 +413,7 @@ restores the old API on Qiskit 2.4 + Aer 0.17):
 | Grover amplification with `mcx` + `ZGate().control` (13) | 1 − F = 1.7e-14; P(marked) 0.9966 on both |
 | phase kickback (11) | 1 − F = 4e-16 |
 
-#### How to run Zickert's book code on mwqc
+#### How to run Zickert's book code on mwqc: Volume 1
 
 The book's repository has no license file, so its notebooks are not copied into this repo. You clone it
 yourself, and `pyqml_port/port_book.py` rewrites the import lines.
@@ -462,9 +463,76 @@ python3 pyqml_port/port_book.py --book book_vol1 --validate --chapters 2,5,13
 Each chapter runs twice from the same source: on Qiskit 2.x + Aer (through `pyqml_port/legacy_qiskit.py`,
 which restores the pre-1.0 `execute`/`Aer` API) and on mwqc. Every `execute()` call is compared one-to-one:
 statevector fidelity, unitary difference, exact probabilities, and total-variation distance for sampled counts
-(0.01-0.05 is shot noise). One line per chapter is printed; full results go to `results/pyqml_validation.json`.
+(0.01-0.05 is shot noise). One line per chapter is printed; full results go to `results/pyqml_validation_<book folder>.json`.
 
-**5. Your own book-style code.** Change the import line to `from mwqc.qiskit_compat import ...` and leave the
+#### Volume 2 (*Combinatorial Optimization*)
+
+Vol. 2's notebooks come in three kinds, and they run in two environments:
+
+| notebooks | what they use | runs on |
+|---|---|---|
+| `v2_c_05` observable, `v2_d_01` decomposition, `v2_d_02` variational, `v2_d_03` ansatz, `v2_d_05` optimizer, `v2_f_02` adjacency, `v2_f_03` solving Ising | hand-built circuits with `execute` / `Aer`, as in Vol. 1 | **mwqc** (ported) |
+| `v2_h_01` QAOA, first half: `rzz` problem circuit, `rx` mixer, `Parameter`, COBYLA loop | hand-built QAOA | **mwqc** (ported) |
+| `v2_b_01` pandemic, `v2_b_03` classical | pandas + networkx only | mwqc env (no quantum calls) |
+| `v2_f_07` Qiskit, `v2_h_01` second half, `v2_h_03` weighted max-cut, `v2_m_01` applications | Qiskit's own `VQE` / `QAOA`, `QuantumInstance`, `qiskit_optimization`, IBMQ, noise models, mitiq | **legacy-Qiskit env** (unchanged) |
+
+The last row uses parts of Qiskit that were removed in Qiskit 1.0 (`qiskit.algorithms`, `qiskit.utils.QuantumInstance`),
+so it needs Qiskit as it was when the book came out. `pyqml_port/requirements-legacy-qiskit.txt` pins that
+stack (Qiskit 0.41 / Terra 0.23.1 / Aer 0.11.2, qiskit-optimization 0.5.0); it was installed and checked:
+Qiskit's QAOA and VQE both find the optimal max cut on a test graph.
+
+**1. Clone the book.** The `data/` folder (Marvel hero network, 22 MB) comes with it.
+
+```bash
+cd ~/Quantum_Compute_MW
+git clone https://github.com/quantum-machine-learning/Hands-On-Quantum-Machine-Learning-With-Python-Vol2 book_vol2
+pip install networkx pandas matplotlib jupyterlab     # in the mwqc environment
+```
+
+**2. Hand-built chapters on mwqc.**
+
+```bash
+python3 pyqml_port/port_book.py --book book_vol2 --out pyqml_port/ported_vol2
+jupyter lab pyqml_port/ported_vol2
+```
+
+The porter prints which notebooks contain cells for the legacy env. Those cells are left unchanged and start with
+`# [mwqc port] needs Qiskit's pre-1.0 algorithm stack`. In `v2_h_01_qaoa`, run on mwqc up to the hand-built
+QAOA result; the cells from the hero-network Max-Cut onward belong to step 3. `data/` is linked into the ported
+folder, so `./data/hero-network.csv` resolves.
+
+Symbolic angles work as in the book: `Parameter("gamma")` in `rzz` / `rx` / `ry` / `rz` / controlled rotations, `draw()`,
+`decompose()`, and `qc.assign_parameters({gamma: 0.8})` before `execute` (an unbound circuit raises a clear error).
+
+**3. Qiskit-algorithm chapters in the legacy env** (a separate virtual environment, Python 3.10 or 3.11):
+
+```bash
+python3.10 -m venv ~/venvs/pyqml_legacy
+source ~/venvs/pyqml_legacy/bin/activate
+pip install -r pyqml_port/requirements-legacy-qiskit.txt
+python -m ipykernel install --user --name pyqml_legacy --display-name "PyQML legacy Qiskit 0.41"
+jupyter lab book_vol2          # open v2_f_07, v2_h_01 (second half), v2_h_03, v2_m_01; kernel "PyQML legacy Qiskit 0.41"
+deactivate
+```
+
+The original notebooks run there unchanged. In `v2_m_01`, the cells that call `IBMQ.load_account()` need an
+IBM Quantum account, and the IBMQ provider of that era connects to an IBM service that has since been retired;
+the simulator and noise-model cells run locally.
+
+**4. Check the mwqc chapters against IBM's stack (optional, mwqc env with Qiskit 2.x + Aer installed).**
+
+```bash
+python3 pyqml_port/port_book.py --book book_vol2 --validate
+python3 pyqml_port/port_book.py --book book_vol2 --validate --chapters d_01,f_03,qaoa
+```
+
+`--chapters` takes any part of a Vol. 2 file name. Legacy-env cells are skipped on both stacks and counted in
+the output (`[n legacy-env cells skipped]`). Cells after them that use their results fail the same way on both
+stacks and are listed as errors. Results go to `results/pyqml_validation_book_vol2.json`.
+
+#### Your own book-style code
+
+Change the import line to `from mwqc.qiskit_compat import ...` and leave the
 rest unchanged. `python3 pyqml_port/bookstyle_examples.py` runs the eight programs in the table above on both
 stacks (~3 s) as a quick check of an installation. Sampled-count TVDs vary run to run at the 0.01-0.02 level (shot noise).
 

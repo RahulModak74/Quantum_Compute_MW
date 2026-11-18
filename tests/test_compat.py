@@ -59,3 +59,67 @@ def test_mid_circuit_measurement_is_refused():
     qc = C.QuantumCircuit(1, 1); qc.h(0); qc.measure(0, 0)
     with pytest.raises(NotImplementedError):
         qc.x(0)
+
+
+# ── PyQML Vol. 2 additions: rzz/rxx/ryy, Parameter, .data on results, porter rules ──
+def test_two_qubit_rotations_match_qiskit():
+    for g in ("rzz", "rxx", "ryy"):
+        a, b = C.QuantumCircuit(3), qiskit.QuantumCircuit(3)
+        for qc in (a, b):
+            qc.h(0); qc.ry(0.4, 1); qc.rx(0.9, 2)
+            getattr(qc, g)(0.73, 0, 2); getattr(qc, g)(-1.2, 2, 1)
+        ua = C.execute(a, C.Aer.get_backend("unitary_simulator")).result().get_unitary()
+        ub = Operator(b).data
+        k = np.unravel_index(np.argmax(np.abs(ub)), ub.shape)
+        assert np.allclose(ua * (ub[k] / ua[k]), ub, atol=1e-12), g
+
+
+def test_parameter_bind_append_and_qaoa_circuit():
+    # the hand-built QAOA of PyQML Vol. 2 ch. "QAOA": rzz(gamma) on edges, rx(beta) mixer, appended sub-circuits
+    edges, n = [(0, 1), (1, 2)], 3
+
+    def build(m, P):
+        g, b = P("gamma"), P("beta")
+        qp = m.QuantumCircuit(n)
+        for e in edges:
+            qp.rzz(g, *e)
+        qa = m.QuantumCircuit(n)
+        for i in range(n):
+            qa.rx(b, i)
+        qc = m.QuantumCircuit(n)
+        qc.h(range(n)); qc.append(qp, range(n)); qc.append(qa, range(n))
+        return qc, g, b
+
+    from qiskit.circuit import Parameter as QP
+    a, ga, ba = build(C, C.Parameter)
+    b, gb, bb = build(qiskit, QP)
+    assert [p.name for p in a.parameters] == ["beta", "gamma"]
+    assert a.decompose() is a and "gamma" in str(a.draw())
+    with pytest.raises(ValueError, match="unbound"):
+        C.execute(a, C.Aer.get_backend("statevector_simulator"))
+    a1 = a.assign_parameters({ga: 0.8, ba: 0.35})
+    b1 = b.assign_parameters({gb: 0.8, bb: 0.35})
+    va = C.execute(a1, C.Aer.get_backend("statevector_simulator")).result().get_statevector()
+    assert abs(abs(np.vdot(va, Statevector(b1).data)) - 1) < 1e-12
+    assert a.parameters and not a1.parameters          # original left unbound
+
+
+def test_result_data_attribute():
+    qc = C.QuantumCircuit(2)
+    qc.rzz(np.pi, 0, 1)
+    u = C.execute(qc, C.Aer.get_backend("unitary_simulator")).result().get_unitary(qc, 2)
+    assert isinstance(u.data, np.ndarray) and u.data.shape == (4, 4)
+    assert np.allclose(u.data, np.diag([-1j, 1j, 1j, -1j]))
+
+
+def test_porter_rewrite_rules():
+    import os, sys
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "pyqml_port"))
+    from port_book import chapter_selected, needs_legacy, rewrite
+    src = "from qiskit import Aer, execute\nfrom qiskit.circuit import Parameter\nimport qutip\n"
+    out = rewrite(src, "mwqc")
+    assert "from mwqc.qiskit_compat import Aer" in out and "from mwqc.qiskit_compat import Parameter" in out
+    assert "import qutip" not in out
+    legacy = "from qiskit import Aer\nfrom qiskit.algorithms import QAOA\n"
+    assert needs_legacy(legacy) and rewrite(legacy, "mwqc") == legacy
+    assert chapter_selected("v2_h_01_qaoa.ipynb", ["qaoa"]) and not chapter_selected("v2_h_01_qaoa.ipynb", ["2"])

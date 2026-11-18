@@ -6,8 +6,11 @@ IBM's current stack so it can be compared with mwqc call-for-call.
 """
 import numpy as np
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister, transpile   # noqa: F401
+from qiskit.circuit import Parameter                                                # noqa: F401
 from qiskit.circuit.library import HGate, RYGate, XGate, YGate, ZGate              # noqa: F401
 from qiskit_aer import AerSimulator
+
+from mwqc.qiskit_compat import _OpArray                                            # noqa: E402  (.data on results)
 
 RECORD = None
 
@@ -55,10 +58,11 @@ class _Result:
 
     def get_statevector(self, circuit=None, decimals=None):
         v = self._pick(circuit)["statevector"]
-        return np.round(v, decimals) if decimals is not None else v
+        return _OpArray.of(np.round(v, decimals) if decimals is not None else v)
 
     def get_unitary(self, circuit=None, decimals=None):
-        return self._pick(circuit)["unitary"]
+        u = self._pick(circuit)["unitary"]
+        return _OpArray.of(np.round(u, decimals) if decimals is not None else u)
 
 
 class _Job:

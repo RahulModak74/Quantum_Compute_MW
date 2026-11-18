@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Port + validate Dr. Frank Zickert's "Hands-On Quantum Machine Learning with Python, Vol. 1"
-(PyQML) notebooks onto mwqc.
+Port + validate Dr. Frank Zickert's "Hands-On Quantum Machine Learning with Python"
+(PyQML) notebooks onto mwqc. Works for Vol. 1 (Get Started) and Vol. 2 (Combinatorial Optimization).
 
 The book's repository has no license file, so its notebooks are NOT redistributed here.
 This script works on YOUR local clone:
@@ -9,6 +9,12 @@ This script works on YOUR local clone:
     git clone https://github.com/quantum-machine-learning/Hands-On-Quantum-Machine-Learning-With-Python-Vol-1 book_vol1
     python3 pyqml_port/port_book.py --book book_vol1 --out pyqml_port/ported      # write mwqc notebooks
     python3 pyqml_port/port_book.py --book book_vol1 --validate                   # run both, compare
+    python3 pyqml_port/port_book.py --book book_vol2 --out pyqml_port/ported_vol2 --validate
+
+Cells that use Qiskit's pre-1.0 algorithm stack (qiskit.algorithms VQE/QAOA, QuantumInstance,
+qiskit_optimization, IBMQ, noise models, mitiq) are left unchanged and marked; they run only in the
+pinned legacy-Qiskit environment (pyqml_port/requirements-legacy-qiskit.txt). Vol. 2 uses them in
+f_07, h_01 (second half), h_03 and m_01.
 
 Porting = rewriting the import lines only:
     from qiskit import QuantumCircuit, Aer, execute      -> from mwqc.qiskit_compat import ...
@@ -42,13 +48,45 @@ sys.path.insert(0, ROOT)
 sys.path.insert(0, HERE)
 
 
+LEGACY_ONLY = re.compile(r"qiskit\.algorithms|qiskit\.utils|qiskit_optimization|qiskit\.providers|qiskit\.tools"
+                         r"|\bIBMQ\b|qiskit_aer\.noise|\bmitiq\b|\bdocplex\b|\bassemble\b")
+LEGACY_MARK = "# [mwqc port] needs Qiskit's pre-1.0 algorithm stack: run in the legacy-Qiskit env (unchanged)\n"
+
+
+def needs_legacy(src: str) -> bool:
+    return bool(LEGACY_ONLY.search(src))
+
+
 def rewrite(src: str, target: str) -> str:
+    if needs_legacy(src):
+        return src
     mod = "mwqc.qiskit_compat" if target == "mwqc" else "legacy_qiskit"
-    src = re.sub(r"^(\s*)from qiskit(\.visualization|\.circuit\.library)? import", rf"\1from {mod} import",
-                 src, flags=re.M)
+    src = re.sub(r"^(\s*)from qiskit(\.visualization|\.circuit\.library|\.circuit)? import",
+                 rf"\1from {mod} import", src, flags=re.M)
     src = re.sub(r"^(\s*)import qiskit\s*$", rf"\1import {mod} as qiskit", src, flags=re.M)
     src = re.sub(r"^(\s*)from qutip import.*$", r"\1pass  # qutip Bloch rendering not ported", src, flags=re.M)
+    src = re.sub(r"^(\s*)import qutip\s*$", r"\1pass  # qutip Bloch rendering not ported", src, flags=re.M)
+    # pandas >= 2 moved this warning class
+    src = src.replace("from pandas.core.common import SettingWithCopyWarning",
+                      "from pandas.errors import SettingWithCopyWarning")
     return src
+
+
+def chapter_id(fname: str) -> str:
+    return os.path.splitext(fname)[0]
+
+
+def chapter_selected(fname: str, chapters) -> bool:
+    """--chapters accepts Vol-1 numbers (2,5,13) or any part of a file name (d_01, qaoa)."""
+    if not chapters:
+        return True
+    nums = re.findall(r"\d+", fname)
+    for c in chapters:
+        if c.isdigit() and nums and int(nums[0]) == int(c) and not fname.startswith("v2_"):
+            return True
+        if not c.isdigit() and c in fname:
+            return True
+    return False
 
 
 def code_cells(nb_path):
@@ -60,20 +98,29 @@ def code_cells(nb_path):
             yield src
 
 
-def port(book, out):
+def port(book, out, chapters=()):
     os.makedirs(out, exist_ok=True)
+    data = os.path.join(book, "data")                     # notebooks read ./data/... relative paths
+    link = os.path.join(out, "data")
+    if os.path.isdir(data) and not os.path.exists(link):
+        os.symlink(data, link)
     for f in sorted(os.listdir(book)):
-        if not f.endswith(".ipynb"):
+        if not f.endswith(".ipynb") or not chapter_selected(f, chapters):
             continue
         nb = json.load(open(os.path.join(book, f)))
+        n_legacy = 0
         for c in nb["cells"]:
             if c["cell_type"] == "code":
-                c["source"] = rewrite("".join(c["source"]), "mwqc").splitlines(keepends=True)
+                src = "".join(c["source"])
+                if needs_legacy(src):
+                    n_legacy += 1
+                    src = LEGACY_MARK + src
+                c["source"] = rewrite(src, "mwqc").splitlines(keepends=True)
                 c["outputs"], c["execution_count"] = [], None
         nb["cells"].insert(0, {"cell_type": "code", "metadata": {}, "outputs": [], "execution_count": None,
                                "source": [f"import sys; sys.path.insert(0, {ROOT!r})  # mwqc\n"]})
         json.dump(nb, open(os.path.join(out, f), "w"), indent=1)
-        print(f"ported {f}")
+        print(f"ported {f}" + (f"   ({n_legacy} cell(s) need the legacy-Qiskit env)" if n_legacy else ""))
 
 
 def run_chapter(nb_path, target, book_dir):
@@ -94,8 +141,12 @@ def run_chapter(nb_path, target, book_dir):
     cwd = os.getcwd()
     os.chdir(book_dir)
     t = time.time()
+    skipped = 0
     try:
         for i, src in enumerate(code_cells(nb_path)):
+            if needs_legacy(src):
+                skipped += 1
+                continue
             try:
                 with contextlib.redirect_stdout(buf):
                     exec(compile(rewrite(src, target), f"{os.path.basename(nb_path)}[{i}]", "exec"), ns)
@@ -104,7 +155,7 @@ def run_chapter(nb_path, target, book_dir):
             plt.close("all")
     finally:
         os.chdir(cwd)
-    return M.RECORD, errors, time.time() - t, buf.getvalue()
+    return M.RECORD, errors, time.time() - t, skipped
 
 
 def compare(ra, rb):
@@ -138,22 +189,21 @@ def compare(ra, rb):
 def validate(book, chapters):
     rows = []
     for f in sorted(os.listdir(book)):
-        if not f.endswith(".ipynb"):
+        if not f.endswith(".ipynb") or not chapter_selected(f, chapters):
             continue
-        ch = int(re.findall(r"\d+", f)[0])
-        if chapters and ch not in chapters:
-            continue
+        ch = chapter_id(f)
         nb = os.path.join(book, f)
-        ra, ea, ta, oa = run_chapter(nb, "qiskit", book)
-        rb, eb, tb, ob = run_chapter(nb, "mwqc", book)
+        ra, ea, ta, sk = run_chapter(nb, "qiskit", book)
+        rb, eb, tb, _ = run_chapter(nb, "mwqc", book)
         c = compare(ra, rb)
-        row = {"chapter": ch, "executes_qiskit": len(ra), "executes_mwqc": len(rb),
+        row = {"chapter": ch, "executes_qiskit": len(ra), "executes_mwqc": len(rb), "cells_legacy_env_only": sk,
                "errors_qiskit": ea, "errors_mwqc": eb, "seconds_qiskit": ta, "seconds_mwqc": tb, **c}
         rows.append(row)
         tvd = "-" if c["counts_tvd_median"] is None else f"{c['counts_tvd_median']:.3f}/{c['counts_tvd_max']:.3f}"
-        print(f"ch{ch:02d}  executes q/m {len(ra):>4}/{len(rb):<4}  sv-infid {c['statevector_infidelity_max']:.1e}"
+        print(f"{ch:<28} executes q/m {len(ra):>4}/{len(rb):<4}  sv-infid {c['statevector_infidelity_max']:.1e}"
               f"  |dp| {c['prob_absdiff_max']:.1e}  |dU| {c['unitary_absdiff_max']:.1e}  counts TVD med/max {tvd}"
-              f"  errors q/m {len(ea)}/{len(eb)}  time q/m {ta:.0f}s/{tb:.0f}s")
+              f"  errors q/m {len(ea)}/{len(eb)}  time q/m {ta:.0f}s/{tb:.0f}s"
+              + (f"  [{sk} legacy-env cells skipped]" if sk else ""))
         for e in eb:
             if e not in ea:
                 print(f"      mwqc-only error: {e}")
@@ -161,23 +211,24 @@ def validate(book, chapters):
             if e not in eb:
                 print(f"      qiskit-only error: {e}")
     os.makedirs(os.path.join(ROOT, "results"), exist_ok=True)
-    p = os.path.join(ROOT, "results", "pyqml_validation.json")
+    p = os.path.join(ROOT, "results", f"pyqml_validation_{os.path.basename(os.path.normpath(book))}.json")
     json.dump(rows, open(p, "w"), indent=2, default=str)
     print(f"saved {p}")
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--book", required=True, help="local clone of the Vol-1 repository")
+    ap.add_argument("--book", required=True, help="local clone of the Vol-1 or Vol-2 repository")
     ap.add_argument("--out", default=None, help="write mwqc-ported notebooks here")
     ap.add_argument("--validate", action="store_true")
-    ap.add_argument("--chapters", default="", help="e.g. 2,5,13")
+    ap.add_argument("--chapters", default="", help="Vol 1: 2,5,13   Vol 2: d_01,f_03,qaoa (part of file name)")
     a = ap.parse_args()
     book = os.path.abspath(a.book)
+    chapters = [x.strip() for x in a.chapters.split(",") if x.strip()]
     if a.out:
-        port(book, a.out)
+        port(book, a.out, chapters)
     if a.validate:
-        validate(book, [int(x) for x in a.chapters.split(",") if x])
+        validate(book, chapters)
 
 
 if __name__ == "__main__":

@@ -10,8 +10,9 @@ Porting a script is one import line:
 Supported
   QuantumRegister / ClassicalRegister / QuantumCircuit(ints or registers)
   gates: i id x y z h s sdg t tdg sx rx ry rz p u1 u cx cnot cy cz ch swap crx cry crz cp cu1
-         ccx toffoli mcx  + append(sub-circuit | XGate/ZGate/...(.control(k)) | qiskit gate)
-  initialize(vector, qubits) on fresh qubits, measure, measure_all, barrier, draw
+         rzz rxx ryy ccx toffoli mcx  + append(sub-circuit | XGate/ZGate/...(.control(k)) | qiskit gate)
+  initialize(vector, qubits) on fresh qubits, measure, measure_all, barrier, draw, decompose
+  Parameter("name") in rotation gates, for drawing; bind with assign_parameters({p: value}) before execute
   Aer.get_backend('statevector_simulator' | 'qasm_simulator' | 'unitary_simulator'
                   | 'aer_simulator' | 'mps_simulator')
   execute(qc, backend, shots=...).result().get_counts() / get_statevector() / get_unitary()
@@ -34,6 +35,32 @@ from . import gates as G
 from .circuit import MWCircuit, qiskit_to_mw_matrix, mw_to_qiskit_matrix
 from .mps import MPSState
 from .statevector import StatevectorState
+
+
+class Parameter:
+    """Symbolic gate angle (as qiskit.circuit.Parameter). A circuit holding one can be drawn;
+    bind it with QuantumCircuit.assign_parameters({p: value}) before execute."""
+
+    def __init__(self, name: str):
+        self.name = name
+
+    def __repr__(self):
+        return f"Parameter({self.name})"
+
+    __str__ = lambda self: self.name
+
+
+def _ctrl(f):
+    return lambda th: _controlled_matrix(f(th), 1)
+
+
+# name -> theta -> matrix in the form QuantumCircuit._gate takes
+_PARAM_GATES = {
+    "rx": G.rx, "ry": G.ry, "rz": G.rz, "p": G.p,
+    "crx": _ctrl(G.rx), "cry": _ctrl(G.ry), "crz": _ctrl(G.rz), "cp": _ctrl(G.p),
+    "rzz": lambda th: G.rzz(th).reshape(4, 4), "rxx": lambda th: G.rxx(th).reshape(4, 4),
+    "ryy": lambda th: G.ryy(th).reshape(4, 4),
+}
 
 # every executed result is appended here when RECORD is a list (used by the validation harness)
 RECORD: list | None = None
@@ -148,7 +175,7 @@ class QuantumCircuit:
         return len(self.clbits)
 
     def size(self):
-        return sum(1 for o in self.ops if o[0] in ("g", "init"))
+        return sum(1 for o in self.ops if o[0] in ("g", "init", "sym"))
 
     # ── argument resolution ──────────────────────────────────────────────
     def _q(self, spec) -> List[int]:
@@ -223,10 +250,32 @@ class QuantumCircuit:
     def t(self, q): return self._broadcast1(G.T, q)
     def tdg(self, q): return self._broadcast1(G.TDG, q)
     def sx(self, q): return self._broadcast1(G.SX, q)
-    def rx(self, th, q): return self._broadcast1(G.rx(th), q)
-    def ry(self, th, q): return self._broadcast1(G.ry(th), q)
-    def rz(self, th, q): return self._broadcast1(G.rz(th), q)
-    def p(self, th, q): return self._broadcast1(G.p(th), q)
+    def _rot1(self, name, th, q):
+        if isinstance(th, Parameter):
+            for x in self._q(q):
+                self._sym(name, th, x)
+            return self
+        return self._broadcast1(_PARAM_GATES[name](th), q)
+
+    def _rotk(self, name, th, *qspecs):
+        if isinstance(th, Parameter):
+            return self._sym(name, th, *qspecs)
+        return self._gate(_PARAM_GATES[name](th), *qspecs)
+
+    def _sym(self, name, th, *qspecs):
+        qs = []
+        for s_ in qspecs:
+            qs += self._q(s_)
+        if len(set(qs)) != len(qs):
+            raise ValueError(f"duplicate qubits {qs}")
+        self._check_not_measured(qs)
+        self.ops.append(("sym", name, th, tuple(qs)))
+        return self
+
+    def rx(self, th, q): return self._rot1("rx", th, q)
+    def ry(self, th, q): return self._rot1("ry", th, q)
+    def rz(self, th, q): return self._rot1("rz", th, q)
+    def p(self, th, q): return self._rot1("p", th, q)
     u1 = p
     def u(self, th, ph, lam, q): return self._broadcast1(G.u(th, ph, lam), q)
     u3 = u
@@ -240,10 +289,13 @@ class QuantumCircuit:
     def cy(self, c, t): return self._c1(G.Y, c, t)
     def cz(self, c, t): return self._c1(G.Z, c, t)
     def ch(self, c, t): return self._c1(G.H, c, t)
-    def crx(self, th, c, t): return self._c1(G.rx(th), c, t)
-    def cry(self, th, c, t): return self._c1(G.ry(th), c, t)
-    def crz(self, th, c, t): return self._c1(G.rz(th), c, t)
-    def cp(self, th, c, t): return self._c1(G.p(th), c, t)
+    def crx(self, th, c, t): return self._rotk("crx", th, c, t)
+    def cry(self, th, c, t): return self._rotk("cry", th, c, t)
+    def crz(self, th, c, t): return self._rotk("crz", th, c, t)
+    def cp(self, th, c, t): return self._rotk("cp", th, c, t)
+    def rzz(self, th, a, b): return self._rotk("rzz", th, a, b)
+    def rxx(self, th, a, b): return self._rotk("rxx", th, a, b)
+    def ryy(self, th, a, b): return self._rotk("ryy", th, a, b)
     cu1 = cp
     def swap(self, a, b): return self._gate(G.SWAP.reshape(4, 4), a, b)
     def ccx(self, c1, c2, t): return self._gate(_controlled_matrix(G.X, 2), c1, c2, t)
@@ -308,6 +360,8 @@ class QuantumCircuit:
                         raise NotImplementedError("append of a circuit containing initialize")
                     self._gate(o[1].reshape(2 ** len(o[2]), 2 ** len(o[2])) if len(o[2]) > 1 else o[1],
                                [qs[i] for i in o[2]])
+                elif o[0] == "sym":
+                    self._sym(o[1], o[2], [qs[i] for i in o[3]])
                 elif o[0] == "m":
                     raise NotImplementedError("append of a circuit containing measurements")
             return self
@@ -333,8 +387,39 @@ class QuantumCircuit:
         import copy
         return copy.deepcopy(self)
 
+    @property
+    def parameters(self):
+        seen = []
+        for o in self.ops:
+            if o[0] == "sym" and o[2] not in seen:
+                seen.append(o[2])
+        return sorted(seen, key=lambda p_: p_.name)
+
+    def assign_parameters(self, values, inplace=False):
+        """values: {Parameter: number} or a sequence in the order of self.parameters."""
+        if not isinstance(values, dict):
+            values = dict(zip(self.parameters, values))
+        qc = self if inplace else self.copy()
+        ops, qc.ops = qc.ops, []
+        for o in ops:
+            if o[0] == "sym":
+                hit = [v for k, v in values.items() if k is o[2] or getattr(k, "name", None) == o[2].name]
+                if hit:
+                    qc._gate(_PARAM_GATES[o[1]](float(hit[0])), list(o[3]))
+                    continue
+            qc.ops.append(o)
+        return None if inplace else qc
+
+    bind_parameters = assign_parameters
+
+    def decompose(self, *a, **k):
+        return self          # sub-circuits are already flattened into gates on append
+
     # ── compile to mwqc ──────────────────────────────────────────────────
     def _unitary_part(self) -> MWCircuit:
+        if any(o[0] == "sym" for o in self.ops):
+            raise ValueError(f"circuit has unbound parameters {self.parameters}; "
+                             "bind them with qc.assign_parameters({p: value}) before execute")
         mc = MWCircuit(self.num_qubits, name=self.name)
         for o in self.ops:
             if o[0] in ("g", "init"):
@@ -349,6 +434,7 @@ class QuantumCircuit:
         from qiskit import ClassicalRegister as QCR, QuantumCircuit as QQC, QuantumRegister as QQR
         from qiskit.circuit.library import UnitaryGate
         qc = QQC(*[QQR(r.size, r.name) for r in self.qregs], *[QCR(r.size, r.name) for r in self.cregs])
+        qparams = {}
         for o in self.ops:
             if o[0] == "init":
                 k = len(o[2])
@@ -357,6 +443,10 @@ class QuantumCircuit:
             elif o[0] == "g":
                 k = len(o[2])
                 qc.append(UnitaryGate(mw_to_qiskit_matrix(o[1], k)), list(o[2]))
+            elif o[0] == "sym":
+                from qiskit.circuit import Parameter as QP
+                qp = qparams.setdefault(o[2].name, QP(o[2].name))
+                getattr(qc, o[1])(qp, *o[3])
             elif o[0] == "m":
                 qc.measure(o[1], o[2])
         return qc
@@ -446,14 +536,27 @@ class _Result:
 
     def get_statevector(self, circuit=None, decimals=None):
         v = self._pick(circuit)["statevector"]
-        return np.round(v, decimals) if decimals is not None else v
+        return _OpArray.of(np.round(v, decimals) if decimals is not None else v)
 
     def get_unitary(self, circuit=None, decimals=None):
         u = self._pick(circuit)["unitary"]
-        return np.round(u, decimals) if decimals is not None else u
+        return _OpArray.of(np.round(u, decimals) if decimals is not None else u)
 
     def success(self):
         return True
+
+
+class _OpArray(np.ndarray):
+    """ndarray that also answers `.data` with the matrix itself, as the Statevector / Operator
+    objects of later pre-1.0 Qiskit did (books print `result.get_unitary(qc).data`)."""
+
+    @classmethod
+    def of(cls, a):
+        return np.asarray(a).view(cls)
+
+    @property
+    def data(self):
+        return self.view(np.ndarray)
 
 
 class _Job:
