@@ -1,0 +1,7 @@
+[B1] TFIM N=100 g=1.0: E=-126.96187618 exact -126.96187674  err 5.6e-07 (rel 4.4e-09), bond 25, S_mid 0.84 bits, 170s
+[B1] TFIM N=200 g=1.0: E=-254.28517228 exact -254.28518159  err 9.3e-06 (rel 3.7e-08), bond 30, S_mid 0.92 bits, 677s
+[B1] TFIM N=100 g=0.5: E=-105.48376994 exact -105.48376995  err 5.6e-09 (rel 5.3e-11), bond 10, S_mid 1.00 bits, 68s
+[B1] TFIM N=100 g=1.5: E=-167.00861446 exact -167.00861448  err 1.5e-08 (rel 9.1e-11), bond 9, S_mid 0.22 bits, 64s
+[B2] Heisenberg N=12 validation: MPS -5.14209063 vs dense exact -5.14209063 (err 2.4e-10)
+[B2] Heisenberg N=100 chi= 16: E=-44.125282, centre bond energy -0.44310 (Bethe bulk -0.44315), S_mid 1.25 bits, 119s
+[B2] Heisenberg N=100 chi= 32: E=-44.127591, centre bond energy -0.44317 (Bethe bulk -0.44315), S_mid 1.32 bits, 857s

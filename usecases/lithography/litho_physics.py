@@ -4,18 +4,12 @@ EUV lithography forward model (the "expensive solver" the surrogate learns).
 Scalar Abbe imaging with partial coherence + defocus, Gaussian acid-diffusion
 blur, constant-threshold resist, sub-pixel CD metrology.
 
-Fixes relative to SOLVE_QUANTUM/LITHOGRAPHY_1/mw_lithography_demo.py
----------------------------------------------------------------------
-1. Frequency grid: the old code used np.fft.fftfreq(nx, d=lambda_nm), i.e. it
-   treated each pixel as 13.5 nm wide while the comments said 1 nm. Here
-   d = PIXEL_NM, so the NA cutoff sits where the optics puts it.
-2. Illumination: the old code was a single coherent on-axis plane wave.
-   Real EUV scanners use partially coherent (annular/dipole) sources; Abbe
-   summation over source points is implemented here.
-3. Normalisation: the old code divided each image by its own maximum, so the
-   resist threshold (dose) silently changed from mask to mask. Here intensity
-   is normalised to the open-frame (clear mask) intensity = 1, so dose means dose.
-4. Resist: adds photo-acid diffusion blur before thresholding.
+Design choices
+--------------
+1. Frequency grid uses the true pixel pitch (d = PIXEL_NM), so the NA cutoff sits where the optics puts it.
+2. Partially coherent annular illumination (Abbe summation over source points), as in EUV scanners.
+3. Intensity normalised to the open-frame (clear mask) intensity = 1, so the resist threshold is a dose.
+4. Photo-acid diffusion blur before thresholding.
 
 Still a SCALAR (Kirchhoff thin-mask) model: no mask 3D effects, no absorber
 stack, no polarisation. Rigorous EUV needs RCWA/FDTD — swap `aerial_image`
@@ -35,7 +29,7 @@ SIGMA_IN, SIGMA_OUT = 0.3, 0.7
 ACID_BLUR_NM = 3.0
 THRESHOLD = 0.30             # resist clears where blurred intensity > threshold (dose-normalised)
 
-_f = np.fft.fftfreq(NX, d=PIXEL_NM)                     # cycles / nm   (FIX 1)
+_f = np.fft.fftfreq(NX, d=PIXEL_NM)                     # cycles / nm
 FX, FY = np.meshgrid(_f, _f, indexing="xy")
 FR2 = FX ** 2 + FY ** 2
 F_CUT = NA / LAMBDA_NM                                  # coherent cutoff

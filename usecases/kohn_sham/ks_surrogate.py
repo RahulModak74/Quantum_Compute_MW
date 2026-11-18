@@ -1,26 +1,19 @@
 #!/usr/bin/env python3
 """
 Kohn-Sham use case, part 1 — Bayesian surrogate for KS eigenvalues of the
-LiFePO4 Fe-O cluster proxy, trained on REAL PySCF data from the v13 runs.
+LiFePO4-motivated Fe-O cluster proxy, trained on real PySCF data.
 
-Data: the PySCF caches written by SOLVE_QUANTUM/Kohn_Sham_ScreenApproach/ks_mw_inference_v13.py
-  data/pyscf_cache_pbe_sto-3g_seed42.npz       200 geometries, PBE/STO-3G  (main set)
-  data/pyscf_cache_pbe0_def2-svp_seed137.npz    25 geometries, PBE0/def2-SVP (too small; LOO only)
-Each cache stores (28 "features", 6 valence eigenvalues). v13 never stored the geometries,
-but it generated them from a seeded RNG, so they are replayed here bit-for-bit
-(checked: re-running PySCF on replayed geometries reproduces the cached eigenvalues
+Data (usecases/kohn_sham/data/):
+  pyscf_cache_pbe_sto-3g_seed42.npz       200 geometries, PBE/STO-3G  (main set)
+  pyscf_cache_pbe0_def2-svp_seed137.npz    25 geometries, PBE0/def2-SVP (small; leave-one-out only)
+Each cache stores the 6 valence eigenvalues per geometry. The geometries are regenerated from the seeded
+generator that produced the dataset (checked: re-running PySCF on them reproduces the cached eigenvalues
 to 3e-8 Ha).
 
-What this script shows
-  E1  The v13 feature set leaks the answer: 7 of the 28 inputs are computed from the
-      very eigenvalues being predicted (band centres, splitting, gap, Fermi level...).
-      The other non-constant inputs depend only on li_occupancy, which never enters the
-      PySCF calculation. So v13's MAE measures how well the network inverts its own
-      feature formulas, not chemistry.
-  E2  The honest problem: geometry (10 interatomic distances) -> 6 eigenvalues.
-      Baselines (predict-the-mean, ridge) vs MWSurrogate, 5-fold CV, in meV,
-      compared with chemical accuracy (1.6 mHa = 43.6 meV).
-  E3  Is the stated uncertainty honest? Coverage of +/- 2 sigma after calibration.
+What this script reports
+  E2  geometry (10 interatomic distances) -> 6 eigenvalues. Baselines (predict-the-mean, ridge) vs
+      MWSurrogate, 5-fold CV, in meV, compared with chemical accuracy (1.6 mHa = 43.6 meV).
+  E3  Is the stated uncertainty reliable? Coverage of +/- 2 sigma after calibration.
 """
 import argparse
 import json
@@ -38,8 +31,6 @@ HA_TO_MEV = 27211.386
 CHEM_ACC_MEV = 43.6
 BASE_ATOM = "Fe 0 0 0; O 2.073 0 0; O -2.073 0 0; O 0 2.073 0; O 0 -2.073 0"
 SCALE = 0.08
-LEAKY = ["fe_d_band_centre", "o_p_band_centre", "exchange_splitting", "charge_transfer", "fermi_level",
-         "band_gap", "dos_at_fermi"]   # all computed from the PySCF eigenvalues (HOMO/LUMO incl.)
 FEATURE_NAMES = [
     "formation_energy", "band_gap", "fermi_level", "dos_at_fermi",
     "fe_d_band_centre", "o_p_band_centre", "charge_transfer", "exchange_splitting",
@@ -51,7 +42,7 @@ FEATURE_NAMES = [
     "interfacial_resistance", "discharge_voltage", "capacity_retention"]
 
 
-def perturb_geometry(base, scale, rng):          # identical to v13
+def perturb_geometry(base, scale, rng):          # the dataset's geometry generator
     out = []
     for p in base.split(";"):
         tok = p.split()
@@ -93,7 +84,7 @@ def mae_mev(a, b):
 
 
 def aufbau_penalty(y, _x):
-    # v13 PRIOR 3 as a soft constraint: valence eigenvalues come out sorted
+    # aufbau prior as a soft constraint: valence eigenvalues come out sorted
     import torch
     return torch.clamp(y[:, :-1] - y[:, 1:], min=0).pow(2).mean() * 1e4
 
@@ -119,24 +110,7 @@ def main():
     print(f"PBE/STO-3G set: {n} geometries, eigenvalue spread (std) "
           f"{np.round(Y.std(0) * HA_TO_MEV).astype(int).tolist()} meV")
 
-    # ── E1: leakage ──────────────────────────────────────────────────────
     folds = kfold(n, a.folds)
-    li = [FEATURE_NAMES.index(k) for k in LEAKY]
-    keep = [i for i in range(28) if i not in li and F[:, i].std() > 1e-9]
-    e1 = {"ridge_on_v13_28_features": [], "ridge_on_v13_minus_leaky": [], "ridge_on_7_leaky_only": []}
-    for f in folds:
-        tr = np.setdiff1d(np.arange(n), f)
-        e1["ridge_on_v13_28_features"].append(mae_mev(ridge(F[tr], Y[tr], F[f]), Y[f]))
-        e1["ridge_on_v13_minus_leaky"].append(mae_mev(ridge(F[tr][:, keep], Y[tr], F[f][:, keep]), Y[f]))
-        e1["ridge_on_7_leaky_only"].append(mae_mev(ridge(F[tr][:, li], Y[tr], F[f][:, li]), Y[f]))
-    e1 = {k: float(np.mean(v)) for k, v in e1.items()}
-    e1["non_constant_non_leaky_features"] = [FEATURE_NAMES[i] for i in keep]
-    out["E1_leakage"] = e1
-    print("\n[E1] v13 inputs leak the target")
-    print(f"  linear fit on all 28 v13 features     : {e1['ridge_on_v13_28_features']:7.1f} meV")
-    print(f"  linear fit on the 7 eigenvalue-derived: {e1['ridge_on_7_leaky_only']:7.1f} meV")
-    print(f"  linear fit on the rest ({len(keep)} non-constant: {', '.join(e1['non_constant_non_leaky_features'])})"
-          f": {e1['ridge_on_v13_minus_leaky']:7.1f} meV")
 
     # ── E2/E3: honest geometry -> eigenvalues ────────────────────────────
     res = {"mean_baseline": [], "ridge_distances": [], "mw_surrogate": [], "mw_surrogate_aufbau": [],

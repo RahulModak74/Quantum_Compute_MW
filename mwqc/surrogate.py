@@ -1,8 +1,7 @@
 """
 MWSurrogate — physics-prior Bayesian surrogate (deep ensemble, heteroscedastic).
 
-This is the reusable form of what the Kohn-Sham v13 and lithography scripts did
-with a Pyro VAE: learn  inputs -> physics outputs  from an expensive solver
+Learn  inputs -> physics outputs  from an expensive solver
 (PySCF, an optics model, ...), with
   * physics priors as soft penalties on the predictions  (`physics_penalty`)
     or as hard architecture constraints  (put them in your `net_factory`),

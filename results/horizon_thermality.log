@@ -1,0 +1,19 @@
+[H1] N=40, half-chain vacuum. Local inverse temperature beta(d) from the exact entanglement Hamiltonian:
+         d term   beta (computed)  Unruh 2 pi d/v  finite-size CFT
+       0.5 site            1.5705          1.5708           1.5704
+       1.0 bond            3.1395          3.1416           3.1384
+       1.5 site            4.7056          4.7124           4.7015
+       2.0 bond            6.2672          6.2832           6.2574
+       2.5 site            7.8229          7.8540           7.8036
+       3.0 bond            9.3711          9.4248           9.3378
+       3.5 site           10.9104         10.9956          10.8576
+       4.0 bond           12.4393         12.5664          12.3607
+       4.5 site           13.9561         14.1372          13.8447
+       5.0 bond           15.4593         15.7080          15.3073
+     d <= 5: mean |rel. deviation from CFT| 0.38 %, max 0.99 %;  slope d(beta)/dd = 3.0892 vs 2 pi / v = 3.1416
+[H2] entanglement entropy S(l), l = 4..196: fitted central charge c = 0.5135 (exact 1/2)
+[H3] mwqc MPS vacuum, N=100: entropy at every cut vs exact, max |error| 1.9e-03 bits (805s)
+     top Schmidt weights (entanglement spectrum)  MPS: 0.78182 0.20511 0.01004 0.00263 0.00030 0.00008
+                                                 exact: 0.78120 0.00000 0.00000 0.00000 0.00000 0.00000
+saved results/horizon_thermality.json
+[H3 corrected 2026-11-18] exact Schmidt weights (helper bug fixed): 0.78120 0.20560 0.01013 0.00267 0.00031 0.00008; MPS within 6.2e-4

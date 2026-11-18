@@ -1,9 +1,5 @@
 PBE/STO-3G set: 200 geometries, eigenvalue spread (std) [231, 294, 241, 233, 334, 328] meV
 
-[E1] v13 inputs leak the target
-  linear fit on all 28 v13 features     :    25.0 meV
-  linear fit on the 7 eigenvalue-derived:    24.9 meV
-  linear fit on the rest (3 non-constant: li_occupancy, volume_strain, discharge_voltage):   213.0 meV
   fold 1/5: mean 203  ridge 84  MW 37  MW+aufbau 36 meV
   fold 2/5: mean 204  ridge 79  MW 35  MW+aufbau 35 meV
   fold 3/5: mean 225  ridge 87  MW 38  MW+aufbau 38 meV

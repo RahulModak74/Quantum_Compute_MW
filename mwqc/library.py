@@ -1,6 +1,6 @@
 """
 Circuit library (mirrors a slice of qiskit.circuit.library) plus the closed-form
-QFT used by the original 1000-qubit MW script.
+QFT for basis-state inputs.
 """
 from __future__ import annotations
 
@@ -64,7 +64,7 @@ def qft_basis_state_bloch(j: int, n: int):
         qubit q  ->  (|0> + exp(2 pi i phi_q)|1>)/sqrt(2),   phi_q = frac(j / 2^(n-q))
     so every output qubit sits on the Bloch equator: theta = pi/2, phi = 2 pi phi_q.
 
-    This is why the original 1000-qubit MW run needed no state vector: the answer is
+    This is why a 1000-qubit QFT on a basis input needs no state vector: the answer is
     known in closed form and needs no entanglement. Returns (theta[], phi[]) radians.
     """
     j = int(j)

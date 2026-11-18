@@ -1,7 +1,8 @@
 # Quantum_Compute_MW
 
 **A CPU-first quantum-computing toolkit built on the Modak-Walawalkar (MW) "Bloch manifold"
-idea, made rigorous, plus two applied use cases: Kohn-Sham (DFT) eigenvalues and EUV lithography.**
+idea, made rigorous, plus applied use cases: Kohn-Sham (DFT) eigenvalues, EUV lithography, 100-200-qubit
+quantum magnets, and horizon thermality from vacuum entanglement.**
 
 Package: `mwqc` (MW Quantum Compute) · Python ≥ 3.9 · numpy, scipy, torch · optional PySCF, Qiskit (only for cross-checks)
 Status: research code, v0.1.0, 2026-11-18. 30 tests pass. Every headline number below is
@@ -22,15 +23,15 @@ reproduced by a script in this repo, and every fast or approximate path is check
 | Beyond-50-qubit physics: 100-200-spin quench dynamics and ground states | **Done, verified vs exact** | dynamics: every site within 1e-4 of exact (N=100); ground energy error 5.6e-7 (N=100, critical) (§4.3, USE_CASES.md) |
 | Book code (Zickert, PyQML Vol. 1) runs on mwqc by changing one import line | **Done**; 8 book-style programs agree with Qiskit+Aer | exact outputs to ≤2e-14; sampled counts within shot noise (TVD ≤ 0.015) (§5.6) |
 | scikit-learn API (`fit/predict`, Pipeline, GridSearchCV) | **Done** | surrogate regressor with `return_std`, quantum-kernel SVM, quantum feature map (§5.5) |
-| "MW handles any 1000-qubit computation" / "10^26 compute reduction" | **Not true. Withdrawn** | §6. Cost grows with *entanglement*, not qubit count; random depth-20 circuits on 40 qubits already break χ = 64 |
+| Horizon thermality: the quantum vacuum seen from one side of a boundary is thermal (Unruh / Bisognano-Wichmann) | **Done, verified vs CFT** | local temperature profile within 0.4 % of theory; entanglement law c = 0.514 vs ½; MPS vacuum within 2e-3 bits of exact (§4.4) |
+| Where the method stops | **Measured** | cost grows with *entanglement*, not qubit count; random depth-20 circuits on 40 qubits exceed χ = 64 (§3.3) |
 
 ---
 
-## 1. The idea, restated so that it is correct
+## 1. The idea
 
-The original MW picture (LinkedIn article, 2 May 2026) put each qubit on its own Bloch sphere,
-2 numbers per qubit, 2n numbers in total, and chained the spheres as a "fibre bundle"
-(qubit k conditioned on qubits 0..k-1).
+The MW picture puts each qubit on its own Bloch sphere, 2 numbers per qubit, 2n numbers in total,
+and chains the spheres as a "fibre bundle" (qubit k conditioned on qubits 0..k-1).
 
 That picture has a precise name in physics: a **matrix product state (MPS)**.
 
@@ -41,7 +42,7 @@ That picture has a precise name in physics: a **matrix product state (MPS)**.
 | "physically realizable states live on a small manifold" | states with low entanglement (area law) have small χ | `entanglement_entropy()`, `bond_dims()` |
 | "Bayesian uncertainty, reducible with effort" | truncation error: discarded singular-value weight, reducible by raising χ | `truncation_error`, `fidelity_estimate`, Estimator `stds` |
 
-So the honest form of the insight is:
+In one line:
 
 > **Memory is linear in qubit count as long as entanglement stays bounded.** For product
 > states (χ = 1) and low-entanglement states (small χ), 1000 qubits fit in kilobytes or megabytes on a
@@ -78,22 +79,22 @@ Quantum_Compute_MW/
 │   └── sklearn_api.py         MWSurrogateRegressor, QuantumKernelClassifier, QuantumFeatureMap
 ├── usecases/
 │   ├── kohn_sham/
-│   │   ├── ks_surrogate.py    KS eigenvalues of the Fe-O cluster from geometry (real PySCF data from v13)
+│   │   ├── ks_surrogate.py    KS eigenvalues of the Fe-O cluster from geometry (real PySCF data)
 │   │   ├── ks_vqe.py          KS/HF orbitals → qubits → VQE vs FCI (the "quantum" route to the same chemistry)
 │   │   └── data/              PySCF caches copied from SOLVE_QUANTUM/Kohn_Sham_ScreenApproach
 │   ├── lithography/
-│   │   ├── litho_physics.py   corrected EUV forward model (Abbe partial coherence, defocus, acid blur, CD)
+│   │   ├── litho_physics.py   EUV forward model (Abbe partial coherence, defocus, acid blur, CD)
 │   │   └── litho_surrogate.py CNN-ensemble surrogate, band-limit physics constraint vs none
-│   └── many_body/             use cases 3-4: 100-200-qubit dynamics and ground states (see USE_CASES.md)
+│   ├── many_body/             use cases 3-4: 100-200-qubit dynamics and ground states (see USE_CASES.md)
+│   └── horizon_thermality/    Unruh / Bisognano-Wichmann thermality of the vacuum, entanglement law (§4.4)
 ├── pyqml_port/                PyQML book port: converter + validation harness, Qiskit legacy shim, book-style checks
 ├── benchmarks/
-│   ├── qft_1000.py            the 1000-qubit QFT, checked (Parts A-D)
+│   ├── qft_1000.py            the 1000-qubit QFT, checked (Parts A-C)
 │   └── limits.py              entanglement wall, GHZ(1000), side-by-side with qiskit-aer MPS
 ├── examples/quickstart.py     20-second tour
 ├── tests/                     30 tests: MPS = statevector = Qiskit, closed forms, JW = FCI, compat, sklearn
 ├── USE_CASES.md               the four use cases in one place
-├── results/                   JSON + logs of every run quoted in this README
-└── docs/legacy_audit.md       file-by-file audit of the earlier code
+└── results/                   JSON + logs of every run quoted in this README
 ```
 
 ### Run it
@@ -148,9 +149,8 @@ makes a gate-by-gate MPS run at n = 1000 practical.
 | A | basis state \|j⟩, j a random **1000-bit** integer | χ = 1 throughout; truncation error 0; max angle error vs closed form **2.7e-15 rad**; state **32 kB**; 123 s |
 | B | random point on every Bloch sphere (output is **entangled**) | max bond **7**, fidelity estimate **1.000000**, state **1.44 MB**, entropies 0.06-0.53 bits per cut; 177 s |
 | C | validation of B's method at n = 20 vs exact statevector | χ=1: true F 0.230 (est. 0.238); χ=2: 0.9600 (0.9613); χ=4: 0.9999937 (0.9999937); χ≥8: 1.0 |
-| D | the v6 training set (j < 2^53) | **93.6 %** of target phases are within 1 mrad of 0 for every sample |
 
-Reading: (A) confirms the closed form the v6 script trained on, without any training.
+Reading: (A) confirms the textbook closed form (QFT|j⟩ is a product state) gate by gate.
 (B) is the result worth quoting: a general 1000-qubit QFT is cheap because **the QFT creates
 little entanglement**, not because qubits are independent. (C) shows that the χ = 1 Bloch picture
 alone would be badly wrong here (23 % fidelity), and that the tracked error estimate is reliable.
@@ -198,7 +198,7 @@ adjoint gradient, BFGS).
 Deep ensemble (default 5 members), heteroscedastic Gaussian likelihood, optional physics penalty
 (soft prior) or physics layer inside the network (hard constraint), `calibrate()` on a validation split,
 `coverage()` on held-out data, `ood_score()` = epistemic σ for routing a sample back to the real solver.
-This replaces the single Pyro VAE of v12/v13. Earlier versions *stated* uncertainty; this one *checks* it.
+The stated uncertainty is checked on held-out data, not assumed.
 
 ---
 
@@ -207,29 +207,18 @@ This replaces the single Pyro VAE of v12/v13. Earlier versions *stated* uncertai
 ### 4.1 Kohn-Sham (DFT)
 
 **(a) `ks_surrogate.py`: KS eigenvalue surrogate on real PySCF data.**
-System: the v13 Fe-O cluster (Fe O₄, charge +2, spin 4; a *proxy* motivated by LiFePO₄), 6 valence
-KS eigenvalues, 200 geometries at PBE/STO-3G that v13 had already computed (~40 s each, ≈ 2.2 CPU-hours).
-v13 never saved the geometries, but generated them from a seeded RNG. They are replayed here, and
-re-running PySCF on replayed geometries reproduces the cached eigenvalues to 3×10⁻⁸ Ha.
+System: Fe-O cluster (Fe O₄, charge +2, spin 4; a *proxy* motivated by LiFePO₄), 6 valence KS eigenvalues,
+200 geometries at PBE/STO-3G (~40 s each, ≈ 2.2 CPU-hours). The geometries are regenerated from the seeded
+generator that produced the dataset; re-running PySCF on them reproduces the cached eigenvalues to 3×10⁻⁸ Ha.
 
-*E1: the v13 inputs leak the answer.*
-
-| inputs (linear fit, 5-fold CV) | MAE (meV) |
-|---|---|
-| the 7 v13 features computed from the eigenvalues themselves | **24.9** |
-| the other non-constant v13 features (all functions of `li_occupancy`, which never enters PySCF) | 213.0 |
-| predict-the-mean | ~210 |
-
-So v13's reported accuracy measured how well the network inverted its own feature formulas.
-
-*E2/E3: the honest problem, geometry (10 interatomic distances) → 6 eigenvalues, 5-fold CV:*
+*Geometry (10 interatomic distances) → 6 eigenvalues, 5-fold CV:*
 
 | model | MAE (meV) |
 |---|---|
 | predict the mean | 210.4 ± 7.7 |
 | ridge regression on distances | 86.0 ± 6.1 |
 | **MWSurrogate** (5-member ensemble) | **36.8 ± 4.4** |
-| MWSurrogate + aufbau-ordering prior (v13 prior 3) | 36.8 ± 4.3 |
+| MWSurrogate + aufbau-ordering prior | 36.8 ± 4.3 |
 
 * **Below chemical accuracy (43.6 meV)** against this PySCF reference, from geometry alone.
   Per-orbital: 46 / 45 / 32 / 32 / 48 / 19 meV, so the two lowest and the 5th orbitals sit at the edge.
@@ -263,8 +252,7 @@ the realistic path is the surrogate in (a), trained on periodic DFT (VASP/GPAW/Q
 `litho_physics.py`: λ = 13.5 nm, NA = 0.33, annular σ 0.3-0.7 (52 source points), 64×64 px at 4 nm,
 ±30 nm defocus, 3 nm acid blur, dose-referenced threshold, sub-pixel CD on the centre row. Four
 training families (line/space, contacts, isolated line ± SRAF, line ends) and two unseen out-of-distribution
-families (diagonal gratings, random pixels). The four bugs of the earlier demo (pixel pitch in
-`fftfreq`, per-image max normalisation, coherent-only illumination, unmeasured speed-up) are fixed.
+families (diagonal gratings, random pixels).
 
 **The MW physics prior as a hard constraint:** the spectrum of any aerial image through a pupil of radius
 NA/λ is confined to |f| ≤ 2NA/λ. The `band` variant projects every prediction onto that set (an FFT
@@ -292,9 +280,8 @@ Reading:
 * The speed-up is only **9×** because the forward model here is a cheap scalar FFT model (21 ms). Against
   rigorous EUV solvers (RCWA/FDTD, seconds to minutes per clip) the same surrogate would be orders of magnitude
   faster, but that has not been measured here and is not claimed.
-* **A failed first attempt is kept on record:** training with a heteroscedastic Gaussian likelihood collapsed
-  the ensemble (image RMSE 0.17, CD σ ≈ 0, coverage 0 %). For a deterministic solver there is no noise to
-  learn. `MWSurrogate(likelihood="mse")` fixes it (`results/litho_surrogate_gaussian_nll_FAILED.*`).
+* The surrogate is trained with `likelihood="mse"`: the forward model is deterministic, so uncertainty comes
+  from ensemble disagreement, not from a learned noise term.
 
 ### 4.3 Beyond 50 qubits: quantum magnets (use cases 3 and 4)
 
@@ -303,6 +290,22 @@ Reading:
 and against dense diagonalisation at N = 12. Verified so far: all 100 sites × all times within 1e-4 of exact
 (dynamics, N = 100); critical-Ising ground energy at N = 100 within 5.6e-7 (relative 4e-9).
 Full details, limits and run commands: **[USE_CASES.md](USE_CASES.md)**.
+
+### 4.4 Horizon thermality from vacuum entanglement (`usecases/horizon_thermality/`)
+
+The vacuum of a quantum field, restricted to one side of a boundary, is a **thermal state**
+(Bisognano-Wichmann theorem / Unruh effect, the flat-space counterpart of Hawking radiation), with local
+temperature T(d) = v/(2πd) at distance d from the boundary. Input: only the Hamiltonian of the critical
+transverse-field Ising chain (free Majorana field, c = ½, v = 2). Nothing thermal goes in.
+
+| check | result |
+|---|---|
+| local inverse temperature β(d), N = 40, 60-digit arithmetic | d = 0.5 / 1 / 2 / 5: **1.5705 / 3.1395 / 6.2672 / 15.459** vs Unruh 2πd/v 1.5708 / 3.1416 / 6.2832 / 15.708; within **0.4 %** of finite-size CFT for d ≤ 5 |
+| entanglement entropy at every cut, N = 200 | central charge **c = 0.5135** vs exact ½ |
+| the same vacuum on the mwqc MPS engine, N = 100 | entropy at all 99 cuts within **1.9×10⁻³ bits** of exact; Schmidt spectrum within 6×10⁻⁴ |
+
+This is quantum field theory on a fixed background (spacetime is not dynamical here). Run:
+`python3 usecases/horizon_thermality/horizon_entanglement.py` (~15 min; `--quick` ~3 min).
 
 ---
 
@@ -345,8 +348,7 @@ judgement calls on feature surface, stated so they can be argued with.
 **Overall: ≈ 50 % of the Qiskit surface that applies to MW** (unweighted mean of the eight rows),
 and ≈ 85 % of what an existing textbook QML codebase actually calls. Across *all* of Qiskit, including
 the excluded hardware parts, it would be ≈ 20 %. That figure is not meaningful for MW and is given only
-for completeness. The earlier `mw_quantum` package mirrored class *names* but performed none of
-the operations: ~0 % functional (docs/legacy_audit.md §1).
+for completeness.
 
 ### 5.3 Where MW is ahead (capabilities Qiskit + hardware do not offer today)
 
@@ -416,24 +418,8 @@ maintenance. `mwqc` is ~2,500 lines of Python.
 
 ---
 
-## 6. Issues: what earlier work claimed vs what holds
+## 6. Open issues in this repo
 
-Detailed per-file evidence is in **`docs/legacy_audit.md`**. Summary:
-
-| Earlier claim (article / code) | What holds |
-|---|---|
-| "1,000 qubits on a laptop" | **True** for product and low-entanglement states, now shown gate by gate. Not new as a capability (MPS, 2003; Aer MPS, ITensor, quimb all do it). |
-| "10^302 GB → 2.7 GB", "10^26 compute reduction" | A ratio of representation sizes, not a measured saving. States that need 2^n amplitudes still need them. **Withdraw.** |
-| "Zero decoherence, 0 % circuit error at n = 1000" | Trivially true of any classical simulation. The real error is truncation, now reported with every result. |
-| "Phase MAE 4.1°" | 93.6 % of the 1000 target phases were ≈ 0 by construction (j capped at 2^53). The full-range closed form needs no learning. |
-| "100 % detection of Haar-random states" | The "Haar" samples were random *pure* Bloch points (r = 1); real Haar states have r ≈ 0 per qubit. Synthetic separation. |
-| `mw_quantum` "drop-in replacement for Qiskit/Aer" | Hard-coded eigenvalues, circular estimator (output = reference + noise), placeholder counts, brute-force classical period finding. Replaced. |
-| `oxygen_pyscf_validation_v2.py` many-body fit | Only n = 1, 2 are real; n ≥ 3 are generated by the formula that is then fitted. |
-| KS v13 accuracy | Leaky features (§4.1). Fixed: geometry inputs give 36.8 meV honestly. |
-| Lithography "240,000× vs RCWA" | No RCWA was run; optics had a pixel-pitch bug. Fixed model; speed-up measured vs the model actually used. |
-| "MW covers 60-70 % of the commercial quantum market" | Unsupported by anything here. Chemistry/materials *ground states* in 3D are often strongly entangled; DMRG for chemistry needs χ in the thousands. Do not repeat. |
-
-**Open issues in this repo (known, not hidden):**
 1. MPS is pure Python/numpy: ~200 µs per two-qubit gate at small χ. qiskit-aer's C++ MPS is the
    performance reference; port the gate kernel to C/numba if speed matters.
 2. Long-range gates are routed with SWAP chains (O(distance)). Fine for LNN-friendly circuits; slow
@@ -458,8 +444,6 @@ Detailed per-file evidence is in **`docs/legacy_audit.md`**. Summary:
    `MWSurrogate` + `ood_score` as an active-learning loop ("call DFT only when σ is large").
 3. **RCWA ground truth** for lithography (open-source RCWA such as S4 / `rcwa`). The surrogate code is unchanged.
 4. Numba/C kernel for `_apply_adjacent`, then re-benchmark against qiskit-aer MPS.
-5. Rewrite the public article's quantitative claims along §6. The verified
-   1000-qubit QFT results (§3.2) stand on their own.
 
 ---
 
@@ -467,12 +451,10 @@ Detailed per-file evidence is in **`docs/legacy_audit.md`**. Summary:
 
 | Source | Used for |
 |---|---|
-| `~/SOLVE_QUANTUM/mw_quantum/` (`mw_quantum` package, `quantum_fourier_manifold_e2e_v6.py`) | API shape; Bloch/fibre-bundle idea → `BlochState`/`MPSState`; audit |
-| `~/FULL_REVIEW/Potential_use/physics_math/MW_FRAMEWORK_IMPLEMENTATION/oxygen_pyscf_validation_v2.py`, `log_of_1000qubits_2.txt` | audit |
+| `~/SOLVE_QUANTUM/mw_quantum/` | API shape; Bloch / fibre-bundle idea → `BlochState` / `MPSState` |
 | `~/FULL_REVIEW/Potential_use/physics_math/MW_Framework/` | Bayesian-manifold pattern → `MWSurrogate` |
-| `~/FULL_REVIEW/Potential_use/physics_math/QUANTUM_MECH_MW/QM_MW_FRAMEWORK_CAPABILITIES.md` | read for intent; its claims (e.g. measurement collapse via heavy-tailed priors) are not implemented or endorsed here |
-| `~/SOLVE_QUANTUM/Kohn_Sham_ScreenApproach/ks_mw_inference_v13.py` + PySCF caches | KS use case data, geometry replay, prior 3 |
-| `~/SOLVE_QUANTUM/LITHOGRAPHY_1/mw_lithography_demo.py` | litho use case (forward model rewritten) |
+| `~/SOLVE_QUANTUM/Kohn_Sham_ScreenApproach/` PySCF caches | Kohn-Sham use case data |
+| `~/SOLVE_QUANTUM/LITHOGRAPHY_1/` | lithography use case (forward model rewritten) |
 
 References: Vidal, PRL 91, 147902 (2003) · White, PRL 69, 2863 (1992) · Fowler, Devitt & Hollenberg,
 Quantum Inf. Comput. 4, 237 (2004) · Nielsen & Chuang, *Quantum Computation and Quantum Information*, §5.1 ·

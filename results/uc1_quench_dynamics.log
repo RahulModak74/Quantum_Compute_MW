@@ -1,0 +1,14 @@
+[A1] N=100 chi= 16: max |error| over all sites & times 2.0e-01; exact to <1e-3 up to t=3.60 (of 8.0); S_mid(T)=3.41 bits; 31s
+[A1] N=100 chi= 32: max |error| over all sites & times 8.0e-02; exact to <1e-3 up to t=5.80 (of 8.0); S_mid(T)=3.84 bits; 141s
+[A1] N=100 chi= 64: max |error| over all sites & times 4.8e-03; exact to <1e-3 up to t=7.00 (of 8.0); S_mid(T)=4.00 bits; 657s
+[A1] N=200 chi= 16: max |error| over all sites & times 2.0e-01; exact to <1e-3 up to t=3.60 (of 8.0); S_mid(T)=3.41 bits; 55s
+[A1] N=200 chi= 32: max |error| over all sites & times 8.0e-02; exact to <1e-3 up to t=5.80 (of 8.0); S_mid(T)=3.84 bits; 301s
+[A1] N=200 chi= 64: max |error| over all sites & times 4.8e-03; exact to <1e-3 up to t=7.00 (of 8.0); S_mid(T)=4.00 bits; 1456s
+[A2] N=100 chaotic Ising chi= 16: S_mid(T)=2.22 bits, fidelity est 0.9200, 13s
+[A2] N=100 chaotic Ising chi= 32: S_mid(T)=2.36 bits, fidelity est 0.9945, 55s
+[A2] N=100 chaotic Ising chi= 64: S_mid(T)=2.38 bits, fidelity est 1.0000, 206s
+[A2] N=100 chaotic Ising chi=128: S_mid(T)=2.38 bits, fidelity est 1.0000, 293s
+[A2] chi= 16 vs chi=128: max |d<X_i>| 1.5e-02
+[A2] chi= 32 vs chi=128: max |d<X_i>| 3.8e-03
+[A2] chi= 64 vs chi=128: max |d<X_i>| 4.1e-05
+saved /home/rahul/Quantum_Compute_MW/results/uc1_quench_dynamics.json

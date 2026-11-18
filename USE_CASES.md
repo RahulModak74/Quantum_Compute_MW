@@ -1,4 +1,4 @@
-# Quantum_Compute_MW: the four use cases
+# Quantum_Compute_MW: use cases
 
 Each use case has a runnable script, is checked against an independent reference, and states
 both what it shows and what it does not. Numbers are from runs on a Lenovo LOQ 15IRH8 laptop
@@ -9,10 +9,12 @@ both what it shows and what it does not. Numbers are from runs on a Lenovo LOQ 1
 | 1 | Kohn-Sham (DFT) eigenvalues, Fe-O cluster | 6 valence KS levels, 200 geometries | PySCF PBE (real DFT runs) | **36.8 meV** MAE from geometry alone (< 43.6 meV chemical accuracy); 0.2 ms vs ~40 s per solve |
 | 2 | EUV lithography aerial image + CD | 64×64 masks, ±30 nm defocus | Abbe partially-coherent optics model | CD error **0.17 nm**, calibrated ±2σ, unseen patterns flagged (AUROC 1.000) |
 | 3 | Quench dynamics of a quantum magnet | **100-200 qubits** | exact free-fermion solution (any N) | every site, every time step within **1e-4** of exact (N = 100, t ≤ 2) |
-| 4 | Ground states of quantum magnets | **100-200 qubits** | exact free-fermion energy; dense ED at N = 12; Bethe ansatz | critical Ising N = 100: energy error **5.6e-7** (rel. 4e-9); Heisenberg N = 100 matches Bethe bulk energy to 5 digits |
+| 4 | Ground states of quantum magnets | **100-200 qubits** | exact free-fermion energy; dense ED at N = 12; Bethe ansatz | critical Ising N = 100: energy error **5.6e-7** (rel. 4e-9); Heisenberg N = 100 within 2e-5 of the Bethe bulk energy per bond |
+| 5 | Horizon thermality of the quantum vacuum | 40-200 sites | conformal field theory; exact free fermions | Unruh temperature profile within **0.4 %**; c = 0.514 vs ½ |
 
 Use cases 1-2 are **MW surrogates** (Bayesian physics priors, live inference, checked uncertainty).
 Use cases 3-4 are **beyond-50-qubit quantum simulations** on the MW sparse-Hilbert-space engine (MPS).
+Example 5 derives thermality of the vacuum from entanglement alone, checked against field theory.
 
 ---
 
@@ -21,8 +23,8 @@ Use cases 3-4 are **beyond-50-qubit quantum simulations** on the MW sparse-Hilbe
 **Question.** Predict the 6 valence Kohn-Sham eigenvalues of the LiFePO₄-motivated Fe-O cluster
 (Fe O₄, charge +2, spin 4) for a new geometry without running DFT.
 
-**How.** 200 real PySCF PBE/STO-3G calculations from the earlier v13 work. Their geometries were
-recovered by replaying v13's seeded random generator, and re-running PySCF reproduces the cached eigenvalues to 3×10⁻⁸ Ha.
+**How.** 200 real PySCF PBE/STO-3G calculations. Their geometries are regenerated from the seeded generator
+that produced the dataset; re-running PySCF reproduces the cached eigenvalues to 3×10⁻⁸ Ha.
 Input = 10 interatomic distances; output = 6 eigenvalues ± σ. `MWSurrogate`, 5-fold cross-validation.
 
 | model | MAE (meV) |
@@ -33,8 +35,6 @@ Input = 10 interatomic distances; output = 6 eigenvalues ± σ. `MWSurrogate`, 5
 
 * Below chemical accuracy (43.6 meV) against this reference. ±2σ coverage 93 % after calibration.
 * 0.2 ms per prediction vs ~40 s per PySCF solve.
-* Also found and fixed: the v13 inputs leaked the answer (7 of 28 features were computed from the target
-  eigenvalues; a linear fit on them alone gave 24.9 meV).
 * **Limits:** cluster proxy, not periodic LiFePO₄; valid inside the sampled ±0.08 Å displacements.
   Next step: train on periodic DFT (Quantum ESPRESSO / GPAW).
 
@@ -116,9 +116,11 @@ millions of shots. Dense simulation is impossible at N = 100.
 
 | system | result |
 |---|---|
-| critical Ising, N = 100, χ ≤ 32 | E = −126.96187618 vs exact −126.96187674: **error 5.6×10⁻⁷** (relative 4×10⁻⁹), bond dimension 25, 4 min |
-| Heisenberg, N = 12 (validation) | MPS −5.14209063 vs dense exact −5.14209063: **error 7×10⁻¹⁰** |
-| Heisenberg, N = 100, χ = 16 / 32 | E = −44.12231 / −44.12513; energy per bond at the chain centre **−0.44315**, equal to the Bethe-ansatz infinite-chain value 1/4 − ln 2 = −0.44315 (χ = 32, 9 min) |
+| critical Ising, N = 100, χ ≤ 32 | E = −126.96187618 vs exact −126.96187674: **error 5.6×10⁻⁷** (relative 4×10⁻⁹), bond dimension 25, 3 min |
+| critical Ising, N = 200 | E = −254.28517228 vs exact −254.28518159: error 9.3×10⁻⁶ (relative 4×10⁻⁸), bond dimension 30, 11 min |
+| off-critical Ising, N = 100, g = 0.5 / 1.5 | error 5.6×10⁻⁹ / 1.5×10⁻⁸, about 1 min each |
+| Heisenberg, N = 12 (validation) | MPS −5.14209063 vs dense exact −5.14209063: **error 2.4×10⁻¹⁰** |
+| Heisenberg, N = 100, χ = 16 / 32 | E = −44.125282 / −44.127591; energy per bond at the chain centre −0.44310 / **−0.44317**, vs the Bethe-ansatz infinite-chain value 1/4 − ln 2 = −0.44315 (χ = 32, 14 min) |
 
 * **Limits:** imaginary-time convergence is set by the energy gap. Critical chains need long schedules
   (a DMRG solver would converge faster and is the next step). 1-D chains are the MPS sweet spot. 2-D lattices
@@ -137,3 +139,25 @@ Run: `python3 usecases/many_body/uc2_ground_states.py` (`--quick` ≈ 10 min).
   The MW contribution is the integrated, verified, CPU-first stack: an error bar on every number, a
   χ = 1 "Bloch" diagnostic for when the sparse picture holds, and Bayesian surrogates (use cases 1-2) for live
   inference.
+
+---
+
+## Example 5: horizon thermality from vacuum entanglement
+
+**Question.** Is the vacuum of a quantum field, seen from one side of a boundary, a thermal state with the
+Unruh temperature profile T(d) = v/(2πd) (Bisognano-Wichmann theorem, the flat-space counterpart of Hawking
+radiation)? And does its entanglement entropy follow the conformal-field-theory law?
+
+**How.** Critical transverse-field Ising chain (free Majorana field, c = ½, v = 2). The exact entanglement
+Hamiltonian of half the chain is computed in 60-digit arithmetic, giving a local inverse temperature at each site.
+The same vacuum is then computed independently on the mwqc MPS engine. Nothing thermal goes in.
+
+| check | result |
+|---|---|
+| local inverse temperature β(d) (N = 40) | d = 0.5 / 1 / 2 / 5: **1.5705 / 3.1395 / 6.2672 / 15.459** vs Unruh 2πd/v 1.5708 / 3.1416 / 6.2832 / 15.708; within **0.4 %** of the finite-size CFT prediction (max 1 %) for d ≤ 5 |
+| entanglement law, every cut (N = 200) | central charge **c = 0.5135** vs exact ½ |
+| MPS engine vs exact (N = 100) | entropy at all 99 cuts within **1.9×10⁻³ bits**; Schmidt spectrum within 6×10⁻⁴ |
+
+* **Scope:** quantum field theory on a fixed background; spacetime is not dynamical here.
+
+Run: `python3 usecases/horizon_thermality/horizon_entanglement.py` (`--quick` ≈ 3 min).

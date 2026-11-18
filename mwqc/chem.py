@@ -6,8 +6,7 @@ Quantum-chemistry layer — the Qiskit-Nature slice of mwqc.
     res  = vqe_uccsd(prob, H)                    # VQE with a UCCSD ansatz
     res.energy, prob.e_fci, prob.e_hf
 
-Unlike the earlier `mw_quantum.MWDriver`, nothing here is pre-tabulated: integrals
-come from PySCF, the qubit Hamiltonian is built by an explicit Jordan-Wigner
+Integrals come from PySCF, the qubit Hamiltonian is built by an explicit Jordan-Wigner
 transform, and the exact (FCI) answer is computed independently so every VQE
 number can be checked.
 

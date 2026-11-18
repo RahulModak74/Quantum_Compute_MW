@@ -8,7 +8,6 @@ Part A  basis-state input |j>, j a random 1000-bit integer (all 2^1000 values re
 Part B  general product-state input (random point on every Bloch sphere).
         Here the QFT output IS entangled. MPS with a bond cap; truncation error reported.
 Part C  validation of Part B's method at n = 20 against the exact statevector.
-Part D  how much of the original v6 run's "phase prediction" target was trivial.
 
 Usage:  python3 benchmarks/qft_1000.py [--n 1000] [--chi 32] [--skip-a] [--skip-b]
 Results merge into results/qft_<n>.json, so parts can be re-run separately.
@@ -87,18 +86,6 @@ def run_b(n, rng, chi_cap, circ, out):
     print("    entanglement entropy across sampled cuts (bits): " + " ".join(f"{e:.2f}" for e in ent))
 
 
-def run_d(n, rng, out):
-    # v6 drew j < 2^53 and trained on phi_out(m) = 2*pi*j/2^(m+1) for each qubit m.
-    js = rng.integers(0, 2 ** 53 - 1, size=200)
-    trivial = []
-    for jj in js:
-        ph = [(2 * math.pi * int(jj) / 2 ** (m + 1)) % (2 * math.pi) for m in range(n)]
-        trivial.append(sum(1 for x in ph if x < 1e-3 or x > 2 * math.pi - 1e-3))
-    out["D_v6_trivial_fraction"] = float(np.mean(trivial)) / n
-    print(f"\n[D] In the v6 setup (j < 2^53), {100 * np.mean(trivial) / n:.1f}% of the {n} output "
-          f"phases are within 1 mrad of 0 for every sample — a constant predictor gets them right.")
-
-
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--n", type=int, default=1000)
@@ -128,7 +115,6 @@ def main():
     run_c(np.random.default_rng(a.seed + 1), a.chi, out)
     if not a.skip_b:
         run_b(n, np.random.default_rng(a.seed + 2), a.chi, circ, out)
-    run_d(n, np.random.default_rng(a.seed + 3), out)
 
     out["peak_rss_MB_last_run"] = rss_mb()
     print(f"\nPeak process RSS (this run): {out['peak_rss_MB_last_run']:.0f} MB")

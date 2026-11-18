@@ -13,7 +13,7 @@ How it relates to the original MW idea
   The price: chi must grow with entanglement. When chi is capped, singular
   values are discarded and this class *records exactly how much weight was
   thrown away* (`truncation_error`, `fidelity_estimate`). That is the honest
-  error bar — it replaces the "Bayesian sigma" of the earlier MW scripts.
+  error bar.
 
 Conventions: site k == qubit k. Tensors A[k] have shape (chi_left, 2, chi_right).
 Mixed-canonical form is maintained around `self.center`.

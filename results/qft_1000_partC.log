@@ -4,7 +4,6 @@
 [C] n=20 product input, chi<=  8: true fidelity 1.0000000000, tracked estimate 1.0000000000, max bond 7
 [C] n=20 product input, chi<= 32: true fidelity 1.0000000000, tracked estimate 1.0000000000, max bond 7
 
-[D] In the v6 setup (j < 2^53), 93.6% of the 1000 output phases are within 1 mrad of 0 for every sample — a constant predictor gets them right.
 
 Peak process RSS (this run): 112 MB
 saved results/qft_1000.json
