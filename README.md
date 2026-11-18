@@ -21,7 +21,7 @@ reproduced by a script in this repo, and every fast or approximate path is check
 | Kohn-Sham eigenvalue surrogate on real PySCF data | **Done**, below chemical accuracy | **36.8 ± 4.4 meV** MAE from geometry alone (chem. acc. 43.6 meV); ~0.2 ms vs ~40 s per PySCF solve |
 | Lithography aerial-image/CD surrogate with physics constraint | **Done** | CD error **0.17 nm**, ±2σ coverage 93 %, unseen-pattern detection AUROC 1.000 (§4.2) |
 | Beyond-50-qubit physics: 100-200-spin quench dynamics and ground states | **Done, verified vs exact** | dynamics: every site within 1e-4 of exact (N=100); ground energy error 5.6e-7 (N=100, critical) (§4.3, USE_CASES.md) |
-| Book code (Zickert, PyQML Vol. 1) runs on mwqc by changing one import line | **Done**; 8 book-style programs agree with Qiskit+Aer | exact outputs to ≤2e-14; sampled counts within shot noise (TVD ≤ 0.015) (§5.6) |
+| Book code (Zickert, PyQML Vol. 1) runs on mwqc by changing one import line | **Done**; 8 book-style programs agree with Qiskit+Aer | exact outputs to ≤2e-14; sampled counts within shot noise (TVD ≤ 0.02) (§5.6) |
 | scikit-learn API (`fit/predict`, Pipeline, GridSearchCV) | **Done** | surrogate regressor with `return_std`, quantum-kernel SVM, quantum feature map (§5.5) |
 | Horizon thermality: the quantum vacuum seen from one side of a boundary is thermal (Unruh / Bisognano-Wichmann) | **Done, verified vs CFT** | local temperature profile within 0.4 % of theory; entanglement law c = 0.514 vs ½; MPS vacuum within 2e-3 bits of exact (§4.4) |
 | Where the method stops | **Measured** | cost grows with *entanglement*, not qubit count; random depth-20 circuits on 40 qubits exceed χ = 64 (§3.3) |
@@ -109,7 +109,10 @@ python3 benchmarks/limits.py               # ~10 min; uses qiskit-aer if install
 python3 usecases/kohn_sham/ks_vqe.py       # ~3 min
 python3 usecases/kohn_sham/ks_surrogate.py # ~10 min CPU (--quick: 1 min)
 python3 usecases/lithography/litho_surrogate.py   # ~50 min (GPU helps; --quick: 2 min)
+python3 pyqml_port/bookstyle_examples.py   # Zickert PyQML book idioms on mwqc vs Qiskit (~3 s)
 ```
+
+To run the PyQML book's own notebooks (Zickert, Vol. 1) on mwqc, see **§5.6**.
 
 ### Five lines of API
 
@@ -337,7 +340,7 @@ judgement calls on feature surface, stated so they can be argued with.
 | Applicable Qiskit component | What `mwqc` has (tested) | Main gaps | Coverage |
 |---|---|---|---|
 | Circuit building (`QuantumCircuit`, registers, gates) | 24 named gates + k-qubit unitaries, registers, `ccx/mcx/cry/ch`, `append` of sub-circuits and controlled gates, `initialize`, end-of-circuit `measure`, Qiskit round-trip | `Parameter` objects, control flow, mid-circuit measure/reset, QASM | ~60 % |
-| Legacy API used by books/tutorials (`execute`, `Aer.get_backend`, `get_counts`, ...) | full set used by Zickert's PyQML Vol. 1; validated program-by-program against Qiskit + Aer (§5.4) | `c_if`, reset | ~85 % |
+| Legacy API used by books/tutorials (`execute`, `Aer.get_backend`, `get_counts`, ...) | full set used by Zickert's PyQML Vol. 1; validated program-by-program against Qiskit + Aer (§5.6) | `c_if`, reset | ~85 % |
 | Primitives V2 (Estimator, Sampler) | `run([(circuit, observables)])` → `.data.evs/.stds`, counts | parameter broadcasting, precision targets | ~60 % |
 | Pure-state simulators (Aer statevector / MPS / unitary) | statevector, **MPS** (same algorithm class as Aer's, with an error bound), unitary, χ=1 Bloch | GPU, C++ speed (Aer MPS is 2.8-4.6× faster, §3.3) | ~70 % |
 | `quantum_info` (relevant part) | Statevector, SparsePauliOp-like `PauliSum`, reduced states, bipartite entropy, overlaps, 2-site expectations | DensityMatrix, Operator algebra, Clifford | ~35 % |
@@ -409,9 +412,61 @@ restores the old API on Qiskit 2.4 + Aer 0.17):
 | Grover amplification with `mcx` + `ZGate().control` (13) | 1 − F = 1.7e-14; P(marked) 0.9966 on both |
 | phase kickback (11) | 1 − F = 4e-16 |
 
-The book repository has no license, so its notebooks are not redistributed. `pyqml_port/port_book.py --book <clone>
---out <dir>` writes ported notebooks locally, and `--validate` runs every chapter on both stacks. *Running
-the full book was blocked in the build session (third-party code execution) and is left for the owner to run.*
+#### How to run Zickert's book code on mwqc
+
+The book's repository has no license file, so its notebooks are not copied into this repo. You clone it
+yourself, and `pyqml_port/port_book.py` rewrites the import lines.
+
+**1. Install.** mwqc alone is enough to run the ported notebooks. Qiskit + Aer are needed only for step 4,
+the side-by-side check.
+
+```bash
+cd ~/Quantum_Compute_MW
+pip install -r requirements.txt matplotlib jupyterlab
+pip install "qiskit>=2.0" "qiskit-aer>=0.17"        # optional: only for --validate
+```
+
+**2. Get the book's notebooks.**
+
+```bash
+git clone https://github.com/quantum-machine-learning/Hands-On-Quantum-Machine-Learning-With-Python-Vol-1 book_vol1
+```
+
+**3. Port them to mwqc and open them.**
+
+```bash
+python3 pyqml_port/port_book.py --book book_vol1 --out pyqml_port/ported
+jupyter lab pyqml_port/ported
+```
+
+Each chapter notebook is rewritten in place of its imports only:
+
+```python
+from qiskit import QuantumCircuit, Aer, execute        ->  from mwqc.qiskit_compat import QuantumCircuit, Aer, execute
+from qiskit.visualization import plot_histogram        ->  from mwqc.qiskit_compat import plot_histogram
+from qiskit.circuit.library import ZGate               ->  from mwqc.qiskit_compat import ZGate
+```
+
+A first cell adds the repo to `sys.path`, so the notebooks run from any directory. Run them top to bottom as in
+the book; `Aer.get_backend("statevector_simulator" | "qasm_simulator" | "unitary_simulator")`, `execute(...)`,
+`get_counts()`, `get_statevector()` and `plot_histogram` behave as the book describes. QuTiP Bloch-sphere
+renderings are skipped (`plot_bloch_multivector` is available instead).
+
+**4. Check every chapter against IBM's stack (optional).**
+
+```bash
+python3 pyqml_port/port_book.py --book book_vol1 --validate                 # all chapters
+python3 pyqml_port/port_book.py --book book_vol1 --validate --chapters 2,5,13
+```
+
+Each chapter runs twice from the same source: on Qiskit 2.x + Aer (through `pyqml_port/legacy_qiskit.py`,
+which restores the pre-1.0 `execute`/`Aer` API) and on mwqc. Every `execute()` call is compared one-to-one:
+statevector fidelity, unitary difference, exact probabilities, and total-variation distance for sampled counts
+(0.01-0.05 is shot noise). One line per chapter is printed; full results go to `results/pyqml_validation.json`.
+
+**5. Your own book-style code.** Change the import line to `from mwqc.qiskit_compat import ...` and leave the
+rest unchanged. `python3 pyqml_port/bookstyle_examples.py` runs the eight programs in the table above on both
+stacks (~3 s) as a quick check of an installation. Sampled-count TVDs vary run to run at the 0.01-0.02 level (shot noise).
 
 **Where Qiskit is simply better:** breadth, C++ performance, noise models, hardware access, community,
 maintenance. `mwqc` is ~2,500 lines of Python.

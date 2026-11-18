@@ -3,3 +3,7 @@ __pycache__/
 .pytest_cache/
 *.pt
 *.egg-info/
+
+# PyQML book (no license): never commit
+book_vol1/
+pyqml_port/ported/
