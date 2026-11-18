@@ -1,0 +1,26 @@
+[L1] random brick-wall circuits, n=40, chi<=64
+  depth  2: max bond   2, fidelity est 1.0000, S(mid) 0.36 bits, 0.0s
+  depth  4: max bond   4, fidelity est 1.0000, S(mid) 1.06 bits, 0.0s
+  depth  6: max bond   8, fidelity est 1.0000, S(mid) 2.13 bits, 0.0s
+  depth  8: max bond  16, fidelity est 1.0000, S(mid) 2.94 bits, 0.1s
+  depth 10: max bond  32, fidelity est 1.0000, S(mid) 3.44 bits, 0.2s
+  depth 12: max bond  64, fidelity est 1.0000, S(mid) 3.66 bits, 2.4s
+  depth 16: max bond  64, fidelity est 0.8690, S(mid) 5.19 bits, 22.8s
+  depth 20: max bond  64, fidelity est 0.3839, S(mid) 5.20 bits, 26.2s
+
+[L2] GHZ(1000) sampled with MPS
+  2 distinct outcomes (all-0 / all-1), max bond 2, 0.13 MB, 0.8s
+
+[L3] QFT on a random product state: mwqc MPS vs qiskit-aer MPS vs Qiskit Statevector
+  n=20, mwqc_mps_s=0.07, mwqc_max_bond=7, aer_mps_s=1.54, qiskit_statevector_s=4.91, fidelity_mwqc_vs_qiskit=1
+  n=50, mwqc_mps_s=0.456, mwqc_max_bond=7, aer_mps_s=0.135
+Traceback (most recent call last):
+  File "/home/rahul/Quantum_Compute_MW/benchmarks/limits.py", line 100, in <module>
+    main()
+  File "/home/rahul/Quantum_Compute_MW/benchmarks/limits.py", line 76, in main
+    tq = transpile(qc, sim)
+  File "/home/rahul/.local/lib/python3.10/site-packages/qiskit/compiler/transpiler.py", line 271, in transpile
+    _check_circuits_coupling_map(circuits, coupling_map, backend)
+  File "/home/rahul/.local/lib/python3.10/site-packages/qiskit/compiler/transpiler.py", line 322, in _check_circuits_coupling_map
+    raise CircuitTooWideForTarget(
+qiskit.transpiler.exceptions.CircuitTooWideForTarget: 'Number of qubits (100) in circuit-56 is greater than maximum (63) in the coupling_map'

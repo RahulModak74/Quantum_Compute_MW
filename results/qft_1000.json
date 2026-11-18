@@ -1,0 +1,71 @@
+{
+  "n": 1000,
+  "gates": 500500,
+  "two_qubit_gates": 499500,
+  "A_basis_input": {
+    "seconds": 122.58533143997192,
+    "truncation_error": 0.0,
+    "max_angle_error_rad": 2.6645352591003757e-15,
+    "min_bloch_radius": 0.9999999999999752,
+    "memory_state_bytes": 32000,
+    "j_bits_set": 506
+  },
+  "C_validation_n20": [
+    {
+      "chi": 1,
+      "true_fidelity": 0.2297070426909523,
+      "estimated_fidelity": 0.23814789054155514,
+      "max_bond": 1
+    },
+    {
+      "chi": 2,
+      "true_fidelity": 0.9600393238336128,
+      "estimated_fidelity": 0.9612936736081767,
+      "max_bond": 2
+    },
+    {
+      "chi": 4,
+      "true_fidelity": 0.9999937219281684,
+      "estimated_fidelity": 0.9999936742560377,
+      "max_bond": 4
+    },
+    {
+      "chi": 8,
+      "true_fidelity": 0.9999999999962925,
+      "estimated_fidelity": 0.999999999992491,
+      "max_bond": 7
+    },
+    {
+      "chi": 32,
+      "true_fidelity": 0.9999999999962925,
+      "estimated_fidelity": 0.999999999992491,
+      "max_bond": 7
+    }
+  ],
+  "B_product_input": {
+    "seconds": 176.61916041374207,
+    "num_qubits": 1000,
+    "chi_max": 32,
+    "max_bond_used": 7,
+    "mean_bond": 6.70970970970971,
+    "memory_MB": 1.443648,
+    "truncation_error": 4.211503365535494e-10,
+    "fidelity_estimate": 0.999999999578878,
+    "n_truncations": 495510,
+    "entropy_bits_sampled": [
+      0.3357018480339321,
+      0.055110171657567736,
+      0.5251696371776153,
+      0.38714938239255225,
+      0.215555999470621,
+      0.2827921338563059,
+      0.09468520622574962,
+      0.12724321242825345,
+      0.32660265609872896,
+      0.4486093096167678
+    ]
+  },
+  "D_v6_trivial_fraction": 0.936275,
+  "peak_rss_MB": 563.09765625,
+  "peak_rss_MB_last_run": 557.14453125
+}

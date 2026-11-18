@@ -1,0 +1,28 @@
+Optics: lambda=13.5 nm, NA=0.33, annular sigma 0.3-0.7 (52 source points), 64x64 px @ 4.0 nm, acid blur 3.0 nm, threshold 0.3
+Data: train 2000, val 248, test 500, OOD 250; physics solver 20.7 ms/mask
+
+== variant: plain ==
+    member 1/4 trained  (202.4s)
+    member 2/4 trained  (403.2s)
+    member 3/4 trained  (604.1s)
+    member 4/4 trained  (805.0s)
+  image RMSE 0.0045 (in-dist), 0.0196 (OOD); out-of-band power 5.22e-05
+  CD MAE 0.18 nm  by family line_space 0.14, contacts 0.46, iso_sraf 0.10, line_end 0.23
+  print/no-print mismatches: 1/500
+  CD +/-2 sigma coverage: raw 50%, calibrated 94% (target 95%)
+  OOD AUROC (epistemic sigma): diagonal 1.000, random_pixels 1.000
+  speed: physics 20.7 ms/mask vs surrogate 2.22 ms/mask (9x), training 805 s
+
+== variant: band ==
+    member 1/4 trained  (201.2s)
+    member 2/4 trained  (402.6s)
+    member 3/4 trained  (603.9s)
+    member 4/4 trained  (805.3s)
+  image RMSE 0.0039 (in-dist), 0.0169 (OOD); out-of-band power 2.34e-15
+  CD MAE 0.17 nm  by family line_space 0.17, contacts 0.33, iso_sraf 0.08, line_end 0.24
+  print/no-print mismatches: 1/500
+  CD +/-2 sigma coverage: raw 42%, calibrated 93% (target 95%)
+  OOD AUROC (epistemic sigma): diagonal 1.000, random_pixels 1.000
+  speed: physics 20.7 ms/mask vs surrogate 2.24 ms/mask (9x), training 805 s
+
+saved /home/rahul/Quantum_Compute_MW/results/litho_surrogate.json

@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mwqc"
+version = "0.1.0"
+description = "MW Quantum Compute: CPU-first quantum circuit toolkit (statevector, MPS, Bloch) with PySCF chemistry and Bayesian surrogates"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = ["numpy>=2.0", "scipy>=1.10", "torch>=2.0"]
+
+[project.optional-dependencies]
+chem = ["pyscf>=2.3"]
+compare = ["qiskit>=1.0", "qiskit-aer>=0.14"]
+test = ["pytest"]
+
+[tool.setuptools]
+packages = ["mwqc"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

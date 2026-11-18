@@ -1,0 +1,7 @@
+
+[L3] QFT on a random product state: mwqc MPS vs qiskit-aer MPS vs Qiskit Statevector
+  n=20, mwqc_mps_s=0.0614, mwqc_max_bond=7, aer_mps_s=0.0223, qiskit_statevector_s=8.08, fidelity_mwqc_vs_qiskit=1
+  n=50, mwqc_mps_s=0.604, mwqc_max_bond=7, aer_mps_s=0.131
+  n=100, mwqc_mps_s=1.73, mwqc_max_bond=7, aer_mps_s=0.475
+  n=200, mwqc_mps_s=7.5, mwqc_max_bond=7, aer_mps_s=2.72
+saved results/limits.json

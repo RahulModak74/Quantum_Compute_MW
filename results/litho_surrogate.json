@@ -1,0 +1,50 @@
+{
+  "physics_ms_per_mask": 20.708834836500046,
+  "n_train": 2000,
+  "variants": {
+    "plain": {
+      "image_rmse": 0.004534445703029633,
+      "image_rmse_ood": 0.019622135907411575,
+      "out_of_band_power_fraction": 5.2235136536182836e-05,
+      "cd_mae_nm": 0.18342085773718422,
+      "cd_mae_nm_by_family": {
+        "line_space": 0.13673092097770878,
+        "contacts": 0.45996570348739624,
+        "iso_sraf": 0.09633123779296875,
+        "line_end": 0.23011789818604786
+      },
+      "cd_print_mismatch": 1,
+      "cd_coverage_2sigma_raw": 0.5,
+      "cd_coverage_2sigma_calibrated": 0.9441340782122905,
+      "cd_sigma_scale": 3.416489333223066,
+      "ood_auroc": {
+        "diagonal": 1.0,
+        "random_pixels": 1.0
+      },
+      "surrogate_ms_per_mask": 2.2244622859998344,
+      "train_seconds": 805.049310207367
+    },
+    "band": {
+      "image_rmse": 0.003905039746314287,
+      "image_rmse_ood": 0.01694353111088276,
+      "out_of_band_power_fraction": 2.341054011818669e-15,
+      "cd_mae_nm": 0.17470467989671165,
+      "cd_mae_nm_by_family": {
+        "line_space": 0.174541626519304,
+        "contacts": 0.3300887846946716,
+        "iso_sraf": 0.08232243347167968,
+        "line_end": 0.23801519870758056
+      },
+      "cd_print_mismatch": 1,
+      "cd_coverage_2sigma_raw": 0.41899441340782123,
+      "cd_coverage_2sigma_calibrated": 0.9273743016759777,
+      "cd_sigma_scale": 4.243495918972314,
+      "ood_auroc": {
+        "diagonal": 1.0,
+        "random_pixels": 1.0
+      },
+      "surrogate_ms_per_mask": 2.2379103759994905,
+      "train_seconds": 805.2557787895203
+    }
+  }
+}

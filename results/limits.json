@@ -1,0 +1,94 @@
+{
+  "L1": [
+    {
+      "depth": 2,
+      "max_bond": 2,
+      "fidelity_estimate": 1.0,
+      "mid_entropy_bits": 0.36,
+      "seconds": 0.0
+    },
+    {
+      "depth": 4,
+      "max_bond": 4,
+      "fidelity_estimate": 1.0,
+      "mid_entropy_bits": 1.06,
+      "seconds": 0.0
+    },
+    {
+      "depth": 6,
+      "max_bond": 8,
+      "fidelity_estimate": 1.0,
+      "mid_entropy_bits": 2.13,
+      "seconds": 0.0
+    },
+    {
+      "depth": 8,
+      "max_bond": 16,
+      "fidelity_estimate": 1.0,
+      "mid_entropy_bits": 2.94,
+      "seconds": 0.1
+    },
+    {
+      "depth": 10,
+      "max_bond": 32,
+      "fidelity_estimate": 1.0,
+      "mid_entropy_bits": 3.44,
+      "seconds": 0.2
+    },
+    {
+      "depth": 12,
+      "max_bond": 64,
+      "fidelity_estimate": 1.0,
+      "mid_entropy_bits": 3.66,
+      "seconds": 2.4
+    },
+    {
+      "depth": 16,
+      "max_bond": 64,
+      "fidelity_estimate": 0.869,
+      "mid_entropy_bits": 5.19,
+      "seconds": 22.8
+    },
+    {
+      "depth": 20,
+      "max_bond": 64,
+      "fidelity_estimate": 0.3839,
+      "mid_entropy_bits": 5.2,
+      "seconds": 26.2
+    }
+  ],
+  "L2": {
+    "seconds": 0.8,
+    "distinct_outcomes": 2,
+    "max_bond": 2,
+    "memory_MB": 0.13
+  },
+  "L3": [
+    {
+      "n": 20,
+      "mwqc_mps_s": 0.06140398979187012,
+      "mwqc_max_bond": 7,
+      "aer_mps_s": 0.022330045700073242,
+      "qiskit_statevector_s": 8.078195333480835,
+      "fidelity_mwqc_vs_qiskit": 0.9999999999955906
+    },
+    {
+      "n": 50,
+      "mwqc_mps_s": 0.6043581962585449,
+      "mwqc_max_bond": 7,
+      "aer_mps_s": 0.13082647323608398
+    },
+    {
+      "n": 100,
+      "mwqc_mps_s": 1.731116771697998,
+      "mwqc_max_bond": 7,
+      "aer_mps_s": 0.47499632835388184
+    },
+    {
+      "n": 200,
+      "mwqc_mps_s": 7.5005810260772705,
+      "mwqc_max_bond": 7,
+      "aer_mps_s": 2.7198009490966797
+    }
+  ]
+}

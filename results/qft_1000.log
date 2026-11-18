@@ -1,0 +1,18 @@
+Building LNN QFT circuit for n=1000 ...
+  500,500 gates (499,500 two-qubit), built in 7.5s
+  dense statevector would need 16 * 2^1000 bytes = 10^293 GB
+
+[A] |j> input, chi=1:  122.6s, truncation error 0.0e+00, max angle error vs closed form 2.66e-15 rad, state = 32.0 kB
+[C] n=20 product input, chi<=  1: true fidelity 0.2297070427, tracked estimate 0.2381478905, max bond 1
+[C] n=20 product input, chi<=  2: true fidelity 0.9600393238, tracked estimate 0.9612936736, max bond 2
+[C] n=20 product input, chi<=  4: true fidelity 0.9999937219, tracked estimate 0.9999936743, max bond 4
+[C] n=20 product input, chi<=  8: true fidelity 1.0000000000, tracked estimate 1.0000000000, max bond 7
+[C] n=20 product input, chi<= 32: true fidelity 1.0000000000, tracked estimate 1.0000000000, max bond 7
+
+[B] random product input, chi<=32: 176.6s, max bond 7, fidelity estimate 1.000000, state 1.44 MB
+    entanglement entropy across sampled cuts (bits): 0.34 0.06 0.53 0.39 0.22 0.28 0.09 0.13 0.33 0.45
+
+[D] In the v6 setup (j < 2^53), 93.6% of the 1000 output phases are within 1 mrad of 0 for every sample — a constant predictor gets them right.
+
+Peak process RSS (this run): 557 MB
+saved results/qft_1000.json

@@ -1,0 +1,25 @@
+PBE/STO-3G set: 200 geometries, eigenvalue spread (std) [231, 294, 241, 233, 334, 328] meV
+
+[E1] v13 inputs leak the target
+  linear fit on all 28 v13 features     :    25.0 meV
+  linear fit on the 7 eigenvalue-derived:    24.9 meV
+  linear fit on the rest (3 non-constant: li_occupancy, volume_strain, discharge_voltage):   213.0 meV
+  fold 1/5: mean 203  ridge 84  MW 37  MW+aufbau 36 meV
+  fold 2/5: mean 204  ridge 79  MW 35  MW+aufbau 35 meV
+  fold 3/5: mean 225  ridge 87  MW 38  MW+aufbau 38 meV
+  fold 4/5: mean 210  ridge 83  MW 31  MW+aufbau 31 meV
+  fold 5/5: mean 210  ridge 97  MW 44  MW+aufbau 44 meV
+
+[E2] geometry (10 Fe-O/O-O distances) -> 6 valence KS eigenvalues, 5-fold CV, MAE in meV (chemical accuracy = 43.6)
+  mean_baseline         :   210.4 +/- 7.7
+  ridge_distances       :    86.0 +/- 6.1
+  mw_surrogate          :    36.8 +/- 4.4
+  mw_surrogate_aufbau   :    36.8 +/- 4.3
+  per-orbital MAE (MW): [45.6, 45.1, 31.5, 32.3, 47.8, 18.5]
+
+[E3] +/-2 sigma coverage on held-out folds (target 95%): raw 66%, calibrated 93%
+  inference 0.22 ms/geometry vs PySCF ~40 s/geometry
+
+[PBE0/def2-SVP, 25 geoms, LOO] mean baseline 202 meV, ridge on distances 12297 meV  (too few points for a neural surrogate)
+
+saved /home/rahul/Quantum_Compute_MW/results/ks_surrogate.json

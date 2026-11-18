@@ -1,0 +1,48 @@
+{
+  "E1_leakage": {
+    "ridge_on_v13_28_features": 25.00090039492503,
+    "ridge_on_v13_minus_leaky": 212.9934182982425,
+    "ridge_on_7_leaky_only": 24.942712101899623,
+    "non_constant_non_leaky_features": [
+      "li_occupancy",
+      "volume_strain",
+      "discharge_voltage"
+    ]
+  },
+  "E2_geometry_to_eigenvalues": {
+    "mean_baseline": 210.40938460060062,
+    "ridge_distances": 85.95958552889792,
+    "mw_surrogate": 36.79568654393107,
+    "mw_surrogate_aufbau": 36.788394639468194,
+    "coverage_2sigma_raw": 0.6566666666666667,
+    "coverage_2sigma_calibrated": 0.9333333333333333,
+    "fold_std": {
+      "mean_baseline": 7.715079358363282,
+      "ridge_distances": 6.053977242598241,
+      "mw_surrogate": 4.381448481741452,
+      "mw_surrogate_aufbau": 4.318874763732312,
+      "coverage_2sigma_raw": 0.02976761849915293,
+      "coverage_2sigma_calibrated": 0.01767766952966369
+    },
+    "per_orbital_mae_meV": [
+      45.6,
+      45.1,
+      31.5,
+      32.3,
+      47.8,
+      18.5
+    ],
+    "surrogate_inference_ms_per_geometry": 0.21640507999563854,
+    "pyscf_seconds_per_geometry_observed": "34-48 s (replay check, this laptop, PBE/STO-3G, warm-started SOSCF)"
+  },
+  "pbe0_def2svp_25": {
+    "loo_mean_baseline": 201.78440244614117,
+    "loo_ridge_distances_by_lambda": {
+      "0.1": 158.19921416694137,
+      "1": 151.63027202364765,
+      "10": 143.2148277220441,
+      "100": 168.8241240805569
+    },
+    "note": "replay of seed 137 assumed 1:1 (done == len(epss)); not re-verified with PySCF. Lambda chosen post hoc -> optimistic."
+  }
+}
