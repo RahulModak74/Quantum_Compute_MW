@@ -678,3 +678,12 @@ def plot_bloch_multivector(state, **kw):
 
 
 plot_state_qsphere = plot_bloch_multivector
+
+
+# `import qiskit; qiskit.__qiskit_version__` is printed in PyQML Vol. 1 ch. 3
+def _versions():
+    from . import __version__
+    return {"mwqc": __version__, "qiskit-compat-api": "pre-1.0 (execute / Aer)"}
+
+
+__qiskit_version__ = _versions()

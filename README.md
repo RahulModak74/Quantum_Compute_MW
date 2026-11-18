@@ -94,7 +94,8 @@ Quantum_Compute_MW/
 │   └── limits.py              entanglement wall, GHZ(1000), side-by-side with qiskit-aer MPS
 ├── examples/quickstart.py     20-second tour
 ├── tests/                     34 tests: MPS = statevector = Qiskit, closed forms, JW = FCI, compat, sklearn
-├── USE_CASES.md               the four use cases in one place
+├── USE_CASES.md               the use cases in one place
+├── README_FRANK_ZICKERT_PYQML.md  how to run Zickert's PyQML books (Vols. 1-2) on mwqc
 └── results/                   JSON + logs of every run quoted in this README
 ```
 
@@ -113,7 +114,7 @@ python3 usecases/lithography/litho_surrogate.py   # ~50 min (GPU helps; --quick:
 python3 pyqml_port/bookstyle_examples.py   # Zickert PyQML book idioms on mwqc vs Qiskit (~3 s)
 ```
 
-To run the PyQML book's own notebooks (Zickert, Vol. 1) on mwqc, see **§5.6**.
+To run Frank Zickert's PyQML books (Vols. 1 and 2) on mwqc, see **[README_FRANK_ZICKERT_PYQML.md](README_FRANK_ZICKERT_PYQML.md)**.
 
 ### Five lines of API
 
@@ -396,6 +397,9 @@ The kernels run on MPS beyond 20 features (statevector == MPS kernel to 1e-10, t
 quantum kernels fit on a laptop. Whether they *help* is an empirical question per dataset.
 
 ### 5.6 PyQML (Zickert, *Hands-On Quantum Machine Learning with Python*, Vols. 1 and 2) on mwqc
+
+**Step-by-step guide for both volumes, with an introduction to the books and where MW fits:
+[README_FRANK_ZICKERT_PYQML.md](README_FRANK_ZICKERT_PYQML.md).** The summary below is kept for reference.
 
 The book's code uses the pre-1.0 Qiskit API (`execute`, `Aer.get_backend`, `qc.i`), which today's Qiskit has
 removed, so the original notebooks no longer run on Qiskit 2.x either. `mwqc.qiskit_compat` provides that API.
