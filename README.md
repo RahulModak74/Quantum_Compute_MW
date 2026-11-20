@@ -8,8 +8,8 @@ quantum magnets, and horizon thermality from vacuum entanglement.**
 > ## **MW Quantum is a Sparse Hilbert Space Quantum Engine.**
 > **It does not cover dense Hilbert space.** It runs the quantum states that physics actually produces
 > (local Hamiltonians, symmetries, low or structured entanglement) on a CPU, with an error bar on every
-> answer. It is not a full quantum computer and will never be one: Haar-random states, Shor-type and
-> Grover-type circuits need dense Hilbert space and stay with quantum hardware.
+> answer. It is not a full quantum computer and will never be one: Haar-random states, Shor's algorithm and
+> Grover search need dense Hilbert space and stay with quantum hardware (see §0.5).
 >
 > **Read these two short notes first. They draw the line precisely:**
 > * **[docs/QUANTUM_COMP_Vs_SIMULATOR_Vs_EMULATOR.md](docs/QUANTUM_COMP_Vs_SIMULATOR_Vs_EMULATOR.md)**: quantum computer vs simulator vs MW emulator, side by side, including what MW does *not* do.
@@ -40,6 +40,24 @@ reproduced by a script in this repo, and every fast or approximate path is check
 | Horizon thermality: the quantum vacuum seen from one side of a boundary is thermal (Unruh / Bisognano-Wichmann) | **Done, verified vs CFT** | local temperature profile within 0.4 % of theory; entanglement law c = 0.514 vs ½; MPS vacuum within 2e-3 bits of exact (§4.4) |
 | Scope | **Sparse Hilbert space only**; see the two notes in `docs/` | MW covers physically structured states; dense Hilbert space (Haar-random, Shor, Grover) stays with quantum hardware |
 | Where the method stops | **Measured** | cost grows with *entanglement*, not qubit count; random depth-20 circuits on 40 qubits exceed χ = 64 (§3.3) |
+
+---
+
+## 0.5 Scope: what MW Quantum covers
+
+**MW Quantum is a Sparse Hilbert Space Quantum Engine.** Its one dial is the bond dimension χ, reported with every run: if χ stays small, the state is in scope and runs on a CPU with an error bar.
+
+| In scope (sparse Hilbert space) | Outside scope by design (dense Hilbert space) |
+|---|---|
+| Low-entanglement circuits such as the 1000-qubit QFT, GHZ, product states | Haar-random states and random deep circuits |
+| Local Hamiltonians: spin-chain dynamics and ground states, 100-200 qubits | **Shor's algorithm** (period finding on a large register) |
+| Chemistry and materials surrogates built on physical structure (Kohn-Sham, lithography) | **Grover search** (unstructured, flat Hilbert space, no physical prior) |
+| Quantum-field vacuum states (horizon thermality) | Full-register algorithms that need global entanglement |
+| Circuits and books written in the Qiskit style, at small sizes, for learning | Hardware access, transpiler, noise and pulse models |
+
+**Shor and Grover are not claimed.** They need dense Hilbert space and stay with quantum hardware. Shor has a closed-form structure, so a structured form may one day show a small χ; it will be listed here only after it has been measured. Small Grover and QFT programs from the PyQML books run on mwqc as exact toy checks of the circuit API (§5.6), not as a claim about large-scale search.
+
+Read the two notes in [`docs/`](docs/) for the precise line: [quantum computer vs simulator vs MW emulator](docs/QUANTUM_COMP_Vs_SIMULATOR_Vs_EMULATOR.md) and [the Feynman question](docs/QUESTION_FEYNMAN.md).
 
 ---
 
@@ -341,7 +359,7 @@ MW does not encode chemistry onto qubits and does not target quantum hardware. I
 live in a **sparse corner of Hilbert space**, which classical computation can reach directly.
 In `mwqc` that statement is made *measurable*: "sparse" = small MPS bond dimension χ / low
 entanglement entropy, reported with every run (§3.2, §3.3). Where χ stays small, MW computes the
-state on a CPU. Where it does not (random deep circuits, Shor-type circuits), MW says so.
+state on a CPU. Where it does not (random deep circuits; Shor and Grover are outside scope by design, §0.5), MW says so.
 
 So the Qiskit stack splits in two:
 
@@ -434,7 +452,7 @@ restores the old API on Qiskit 2.4 + Aer 0.17):
 | registers + Toffoli oracle with ancillas (6-8) | TVD 0.006 |
 | quantum Bayesian network, sampled (9-10) | TVD 0.004 |
 | quantum Bayesian network, exact | 1 − F ≈ 1e-15; P(survive) 0.3946 = classical Bayes formula 0.3946 |
-| Grover amplification with `mcx` + `ZGate().control` (13) | 1 − F = 1.7e-14; P(marked) 0.9966 on both |
+| Grover amplification with `mcx` + `ZGate().control` (13), a small toy check of the circuit API | 1 − F = 1.7e-14; P(marked) 0.9966 on both |
 | phase kickback (11) | 1 − F = 4e-16 |
 
 #### How to run Zickert's book code on mwqc: Volume 1
