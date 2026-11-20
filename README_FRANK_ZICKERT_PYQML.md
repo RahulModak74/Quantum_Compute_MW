@@ -2,6 +2,10 @@
 
 Volumes 1 and 2, step by step, on a laptop CPU.
 
+**[We recommend you buy Dr. Zickert's PyQML books for Quantum ML learning.]**
+
+**MW Quantum is a Sparse Hilbert Space Quantum Engine. It does not cover dense Hilbert space.** See [docs/](docs/QUANTUM_COMP_Vs_SIMULATOR_Vs_EMULATOR.md).
+
 ---
 
 ## 1. The books
@@ -17,7 +21,7 @@ It assumes no physics background and builds up from a single qubit to working al
 | Data | `data/train.csv`, `data/test.csv` (Titanic) | `data/hero-network.csv` (22 MB) |
 
 The books' code repositories have no license file, so nothing from them is copied into this repository.
-You clone them yourself (step 3 below). Buy the books for the text: the notebooks are the listings, and the
+You clone them yourself (step 3 below). **[We recommend you buy these books for Quantum ML learning.]** The books are paid; their code is open source on GitHub. The notebooks are the listings, and the
 explanations are in the books.
 
 **Why the code needs help today.** Both volumes are written against Qiskit before version 1.0

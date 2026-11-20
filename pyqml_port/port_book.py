@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Port + validate Dr. Frank Zickert's "Hands-On Quantum Machine Learning with Python"
-(PyQML) notebooks onto mwqc. Works for Vol. 1 (Get Started) and Vol. 2 (Combinatorial Optimization).
+(PyQML) notebooks onto mwqc.
+[We recommend you buy these books for Quantum ML learning.] Works for Vol. 1 (Get Started) and Vol. 2 (Combinatorial Optimization).
 
 The book's repository has no license file, so its notebooks are NOT redistributed here.
 This script works on YOUR local clone:

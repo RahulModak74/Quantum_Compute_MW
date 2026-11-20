@@ -4,6 +4,19 @@
 idea, made rigorous, plus applied use cases: Kohn-Sham (DFT) eigenvalues, EUV lithography, 100-200-qubit
 quantum magnets, and horizon thermality from vacuum entanglement.**
 
+
+> ## **MW Quantum is a Sparse Hilbert Space Quantum Engine.**
+> **It does not cover dense Hilbert space.** It runs the quantum states that physics actually produces
+> (local Hamiltonians, symmetries, low or structured entanglement) on a CPU, with an error bar on every
+> answer. It is not a full quantum computer and will never be one: Haar-random states, Shor-type and
+> Grover-type circuits need dense Hilbert space and stay with quantum hardware.
+>
+> **Read these two short notes first. They draw the line precisely:**
+> * **[docs/QUANTUM_COMP_Vs_SIMULATOR_Vs_EMULATOR.md](docs/QUANTUM_COMP_Vs_SIMULATOR_Vs_EMULATOR.md)**: quantum computer vs simulator vs MW emulator, side by side, including what MW does *not* do.
+> * **[docs/QUESTION_FEYNMAN.md](docs/QUESTION_FEYNMAN.md)**: why the exponential wall is the worst case, and where the sparse corner begins.
+>
+> **Logs:** the 1000-qubit runs and the entanglement analysis are in [`results/1000_qubit_logs/`](results/1000_qubit_logs/).
+
 Package: `mwqc` (MW Quantum Compute) · Python ≥ 3.9 · numpy, scipy, torch · optional PySCF, Qiskit (only for cross-checks)
 Status: research code, v0.1.0, 2026-11-18. 34 tests pass. Every headline number below is
 reproduced by a script in this repo, and every fast or approximate path is checked against an exact one.
@@ -21,10 +34,11 @@ reproduced by a script in this repo, and every fast or approximate path is check
 | Kohn-Sham eigenvalue surrogate on real PySCF data | **Done**, below chemical accuracy | **36.8 ± 4.4 meV** MAE from geometry alone (chem. acc. 43.6 meV); ~0.2 ms vs ~40 s per PySCF solve |
 | Lithography aerial-image/CD surrogate with physics constraint | **Done** | CD error **0.17 nm**, ±2σ coverage 93 %, unseen-pattern detection AUROC 1.000 (§4.2) |
 | Beyond-50-qubit physics: 100-200-spin quench dynamics and ground states | **Done, verified vs exact** | dynamics: every site within 1e-4 of exact (N=100); ground energy error 5.6e-7 (N=100, critical) (§4.3, USE_CASES.md) |
-| Book code (Zickert, PyQML Vol. 1) runs on mwqc by changing one import line | **Done**; 8 book-style programs agree with Qiskit+Aer | exact outputs to ≤2e-14; sampled counts within shot noise (TVD ≤ 0.02) (§5.6) |
+| Book code (Zickert, PyQML Vol. 1) runs on mwqc by changing one import line. **[We recommend you buy Dr. Zickert's PyQML books for Quantum ML learning.]** | **Done**; 8 book-style programs agree with Qiskit+Aer | exact outputs to ≤2e-14; sampled counts within shot noise (TVD ≤ 0.02) (§5.6) |
 | PyQML Vol. 2 (combinatorial optimization): hand-built circuits and QAOA on mwqc; Qiskit-algorithm chapters on a pinned Qiskit 0.41 env | **Done** (tooling + instructions) | `rzz`/`rxx`/`ryy`, `Parameter`, `assign_parameters` match Qiskit to 1e-12; legacy env checked: QAOA and VQE find the optimal cut (§5.6) |
 | scikit-learn API (`fit/predict`, Pipeline, GridSearchCV) | **Done** | surrogate regressor with `return_std`, quantum-kernel SVM, quantum feature map (§5.5) |
 | Horizon thermality: the quantum vacuum seen from one side of a boundary is thermal (Unruh / Bisognano-Wichmann) | **Done, verified vs CFT** | local temperature profile within 0.4 % of theory; entanglement law c = 0.514 vs ½; MPS vacuum within 2e-3 bits of exact (§4.4) |
+| Scope | **Sparse Hilbert space only**; see the two notes in `docs/` | MW covers physically structured states; dense Hilbert space (Haar-random, Shor, Grover) stays with quantum hardware |
 | Where the method stops | **Measured** | cost grows with *entanglement*, not qubit count; random depth-20 circuits on 40 qubits exceed χ = 64 (§3.3) |
 
 ---
@@ -95,8 +109,9 @@ Quantum_Compute_MW/
 ├── examples/quickstart.py     20-second tour
 ├── tests/                     34 tests: MPS = statevector = Qiskit, closed forms, JW = FCI, compat, sklearn
 ├── USE_CASES.md               the use cases in one place
+├── docs/                      QUANTUM_COMP_Vs_SIMULATOR_Vs_EMULATOR.md, QUESTION_FEYNMAN.md (scope of MW Quantum)
 ├── README_FRANK_ZICKERT_PYQML.md  how to run Zickert's PyQML books (Vols. 1-2) on mwqc
-└── results/                   JSON + logs of every run quoted in this README
+└── results/                   JSON + logs of every run quoted in this README; 1000_qubit_logs/ has the 1000-qubit runs
 ```
 
 ### Run it
@@ -111,10 +126,11 @@ python3 benchmarks/limits.py               # ~10 min; uses qiskit-aer if install
 python3 usecases/kohn_sham/ks_vqe.py       # ~3 min
 python3 usecases/kohn_sham/ks_surrogate.py # ~10 min CPU (--quick: 1 min)
 python3 usecases/lithography/litho_surrogate.py   # ~50 min (GPU helps; --quick: 2 min)
-python3 pyqml_port/bookstyle_examples.py   # Zickert PyQML book idioms on mwqc vs Qiskit (~3 s)
+python3 pyqml_port/bookstyle_examples.py   # Zickert PyQML book idioms on mwqc vs Qiskit (~3 s)  [recommended: buy the books]
 ```
 
 To run Frank Zickert's PyQML books (Vols. 1 and 2) on mwqc, see **[README_FRANK_ZICKERT_PYQML.md](README_FRANK_ZICKERT_PYQML.md)**.
+**[We recommend you buy Dr. Zickert's PyQML books for Quantum ML learning.]**
 
 ### Five lines of API
 
@@ -314,9 +330,11 @@ This is quantum field theory on a fixed background (spacetime is not dynamical h
 
 ---
 
-## 5. Mapping to IBM's quantum stack (Qiskit): what applies to MW, and coverage
+## 5. The Qiskit-style API: what a sparse Hilbert space engine takes from it, and coverage
 
 ### 5.1 The MW position, and why some of Qiskit does not apply
+
+**`mwqc` speaks the Qiskit circuit API so that existing circuits and books run on it. It is a sparse Hilbert space engine, so it will never be a full quantum computer, and the parts of Qiskit that exist for dense Hilbert space and hardware are outside its scope by design.** The scope notes are in [docs/](docs/).
 
 MW does not encode chemistry onto qubits and does not target quantum hardware. Its position
 (see `QUESTION_FEYNMAN.md` in MW_Geometric_Intelligence) is that physically realisable systems
@@ -342,7 +360,7 @@ judgement calls on feature surface, stated so they can be argued with.
 | Applicable Qiskit component | What `mwqc` has (tested) | Main gaps | Coverage |
 |---|---|---|---|
 | Circuit building (`QuantumCircuit`, registers, gates) | 24 named gates + k-qubit unitaries, registers, `ccx/mcx/cry/ch`, `append` of sub-circuits and controlled gates, `initialize`, end-of-circuit `measure`, Qiskit round-trip | `Parameter` objects, control flow, mid-circuit measure/reset, QASM | ~60 % |
-| Legacy API used by books/tutorials (`execute`, `Aer.get_backend`, `get_counts`, ...) | full set used by Zickert's PyQML Vol. 1; validated program-by-program against Qiskit + Aer (§5.6) | `c_if`, reset | ~85 % |
+| Legacy API used by books/tutorials (`execute`, `Aer.get_backend`, `get_counts`, ...) | full set used by Zickert's PyQML Vol. 1 (**[buy the books]**); validated program-by-program against Qiskit + Aer (§5.6) | `c_if`, reset | ~85 % |
 | Primitives V2 (Estimator, Sampler) | `run([(circuit, observables)])` → `.data.evs/.stds`, counts | parameter broadcasting, precision targets | ~60 % |
 | Pure-state simulators (Aer statevector / MPS / unitary) | statevector, **MPS** (same algorithm class as Aer's, with an error bound), unitary, χ=1 Bloch | GPU, C++ speed (Aer MPS is 2.8-4.6× faster, §3.3) | ~70 % |
 | `quantum_info` (relevant part) | Statevector, SparsePauliOp-like `PauliSum`, reduced states, bipartite entropy, overlaps, 2-site expectations | DensityMatrix, Operator algebra, Clifford | ~35 % |
@@ -355,9 +373,9 @@ and ≈ 85 % of what an existing textbook QML codebase actually calls. Across *a
 the excluded hardware parts, it would be ≈ 20 %. That figure is not meaningful for MW and is given only
 for completeness.
 
-### 5.3 Where MW is ahead (capabilities Qiskit + hardware do not offer today)
+### 5.3 What the sparse-space route adds
 
-| Capability | MW / `mwqc` (measured here) | Qiskit simulators / quantum hardware |
+| Capability | MW / `mwqc` (measured here) | Dense-space simulators / quantum hardware |
 |---|---|---|
 | **Live inference** on a physics question | KS eigenvalues **0.2 ms** vs ~40 s PySCF (~10⁵×); EUV aerial image + CD **2.2 ms** | hardware: queue + thousands of shots per job (seconds to hours); simulators: full re-simulation per query |
 | **Uncertainty you can trust** | stated σ checked on held-out data: **93 %** (KS) and **94 %** (litho) inside ±2σ after calibration | shot-noise std only; hardware error is device noise, not a calibrated predictive σ |
@@ -397,6 +415,8 @@ The kernels run on MPS beyond 20 features (statevector == MPS kernel to 1e-10, t
 quantum kernels fit on a laptop. Whether they *help* is an empirical question per dataset.
 
 ### 5.6 PyQML (Zickert, *Hands-On Quantum Machine Learning with Python*, Vols. 1 and 2) on mwqc
+
+**[We recommend you buy Dr. Zickert's PyQML books for Quantum ML learning.]**
 
 **Step-by-step guide for both volumes, with an introduction to the books and where MW fits:
 [README_FRANK_ZICKERT_PYQML.md](README_FRANK_ZICKERT_PYQML.md).** The summary below is kept for reference.

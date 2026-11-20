@@ -1,6 +1,7 @@
 """
 Legacy-Qiskit compatibility layer (the pre-1.0 API used by most books and tutorials,
 including Dr. Frank Zickert's *Hands-On Quantum Machine Learning with Python*).
+[We recommend you buy these books for Quantum ML learning.]
 
 Porting a script is one import line:
 
