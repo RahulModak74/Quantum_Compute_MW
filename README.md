@@ -586,3 +586,7 @@ maintenance. `mwqc` is ~2,500 lines of Python.
 References: Vidal, PRL 91, 147902 (2003) · White, PRL 69, 2863 (1992) · Fowler, Devitt & Hollenberg,
 Quantum Inf. Comput. 4, 237 (2004) · Nielsen & Chuang, *Quantum Computation and Quantum Information*, §5.1 ·
 Lakshminarayanan et al., deep ensembles, NeurIPS 2017.
+
+## Licence
+
+Apache License 2.0 (see `LICENSE`). Copyright 2026 Bayesian Cybersecurity Pvt Ltd, Rahul Modak and Dr. Rahul Walawalkar. Research code: results, not guarantees.
